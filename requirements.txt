@@ -1,0 +1,12 @@
+# -*- coding: utf-8 -*-
+# Bắt buộc (Part 0-6). Python 3.10-3.13 (khuyến nghị 3.12).
+numpy>=1.26
+pillow>=10.0
+opencv-python-headless>=4.9
+matplotlib>=3.8
+pyyaml>=6.0
+ultralytics>=8.4.0      # YOLO26, YOLOE, SAM 2 (cần git để tự cài CLIP cho YOLOE)
+torch>=2.2              # cài theo hướng dẫn trong docs/SETUP.md nếu dùng GPU NVIDIA
+torchvision>=0.17
+transformers>=5.0       # Grounding DINO, OWLv2, SAM 3 (tuỳ chọn)
+huggingface_hub>=0.25

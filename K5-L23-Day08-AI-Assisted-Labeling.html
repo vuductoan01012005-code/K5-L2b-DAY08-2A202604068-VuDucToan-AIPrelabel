@@ -1,0 +1,3382 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Day 08 Lab — AI hỗ trợ gán nhãn: Pre-label, Review &amp; Calibration · Timer &amp; Hướng dẫn Lab</title>
+  <style>
+    :root {
+      --bg: #f5f3ee;
+      --card: #fffdf9;
+      --ink: #1d1c1a;
+      --muted: #6c675e;
+      --line: #e3ded3;
+      --soft: #efebe3;
+      --warn: #c2410c;
+      --warn-bg: #fff4e8;
+      --warn-line: #f3c9a3;
+      --over: #b91c1c;
+      --over-bg: #fff1f1;
+      --over-line: #f2b8b8;
+      --ok: #15803d;
+      --ok-bg: #dcfce7;
+      --ok-line: #86efac;
+      --info-bg: #eff6ff;
+      --info-line: #bfdbfe;
+      --info-ink: #1d4ed8;
+      --code-bg: #1f1e1b;
+      --code-ink: #f3efe6;
+      --code-bar: #2e2c28;
+      --pc: #2563eb;
+      --sans: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      --mono: "JetBrains Mono", "Cascadia Code", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    html[data-theme="dark"] {
+      --bg: #141311;
+      --card: #1d1c19;
+      --ink: #f3efe6;
+      --muted: #aca598;
+      --line: #34312b;
+      --soft: #282520;
+      --warn: #fb923c;
+      --warn-bg: #2e1d10;
+      --warn-line: #7c3a16;
+      --over: #f87171;
+      --over-bg: #331515;
+      --over-line: #7f2525;
+      --ok: #4ade80;
+      --ok-bg: #112a1a;
+      --ok-line: #1f6f3b;
+      --info-bg: #162235;
+      --info-line: #28456e;
+      --info-ink: #93c5fd;
+      --code-bg: #0d0c0a;
+      --code-ink: #f3efe6;
+      --code-bar: #24221e;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    html,
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.55
+    }
+
+    a {
+      color: color-mix(in srgb, var(--pc) 85%, var(--ink));
+      text-decoration: none
+    }
+
+    a:hover {
+      text-decoration: underline
+    }
+
+    button,
+    input {
+      font-family: inherit;
+      font-size: inherit
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: .86em;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      padding: .08em .38em;
+      border-radius: 5px;
+      overflow-wrap: break-word
+    }
+
+    @media (min-width:600px),
+    print {
+      .nw {
+        white-space: nowrap
+      }
+    }
+
+    .wrap {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 18px 22px 44px
+    }
+
+    /* ---------- top bar ---------- */
+    .top {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 14px
+    }
+
+    .title {
+      flex: 1 1 320px
+    }
+
+    .title-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 4px
+    }
+
+    .tbadge {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--soft);
+      border: 1px solid var(--line);
+      color: var(--muted)
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -.01em
+    }
+
+    .title p {
+      margin: 2px 0 0;
+      color: var(--muted);
+      font-size: 13px
+    }
+
+    .controls {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--ink);
+      padding: 7px 11px;
+      border-radius: 9px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: background .15s, border-color .15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px
+    }
+
+    .btn:hover {
+      border-color: var(--muted);
+      background: var(--soft)
+    }
+
+    .btn.primary {
+      background: var(--ink);
+      color: var(--bg);
+      border-color: var(--ink);
+      min-width: 116px;
+      justify-content: center
+    }
+
+    .btn.primary:hover {
+      opacity: .9;
+      background: var(--ink)
+    }
+
+    .btn.danger {
+      color: var(--over)
+    }
+
+    .btn.on {
+      background: var(--soft);
+      border-color: var(--muted)
+    }
+
+    .sync {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      border-radius: 9px;
+      padding: 3px 4px 3px 10px;
+      font-size: 13px;
+      color: var(--muted)
+    }
+
+    .sync input {
+      border: 0;
+      background: transparent;
+      font-weight: 600;
+      color: var(--ink);
+      width: 94px
+    }
+
+    .sync .btn {
+      padding: 4px 9px
+    }
+
+    /* ---------- hero ---------- */
+    .hero {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px
+    }
+
+    .now {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-left: 8px solid var(--pc);
+      border-radius: 16px;
+      padding: 18px 22px;
+      position: relative;
+      overflow: hidden
+    }
+
+    .now.warn {
+      background: var(--warn-bg);
+      border-color: var(--warn-line);
+      border-left-color: var(--warn)
+    }
+
+    .now.over {
+      background: var(--over-bg);
+      border-color: var(--over-line);
+      border-left-color: var(--over)
+    }
+
+    .now .lab {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-weight: 700;
+      padding-right: 110px
+    }
+
+    .cpb {
+      display: inline-block;
+      background: var(--pc);
+      color: #fff;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      letter-spacing: .03em
+    }
+
+    .mode {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--soft);
+      color: var(--muted)
+    }
+
+    .mode.indep {
+      color: var(--warn);
+      border-color: var(--warn-line);
+      background: var(--warn-bg)
+    }
+
+    .mode.ai {
+      color: #7c3aed;
+      border-color: color-mix(in srgb, #7c3aed 35%, var(--line));
+      background: color-mix(in srgb, #7c3aed 10%, var(--card))
+    }
+
+    .mode.review {
+      color: #0f766e;
+      border-color: color-mix(in srgb, #0f766e 35%, var(--line));
+      background: color-mix(in srgb, #0f766e 10%, var(--card))
+    }
+
+    .mode.setup {
+      color: #475569;
+      border-color: color-mix(in srgb, #475569 30%, var(--line));
+      background: var(--soft)
+    }
+
+    html[data-theme="dark"] .mode.ai {
+      color: #c4b5fd
+    }
+
+    html[data-theme="dark"] .mode.review {
+      color: #5eead4
+    }
+
+    html[data-theme="dark"] .mode.setup {
+      color: #cbd5e1
+    }
+
+    .phase-name {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -.01em
+    }
+
+    .big {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 94px;
+      line-height: 1.02;
+      letter-spacing: -.02em;
+      margin: 8px 0 4px;
+      font-variant-numeric: tabular-nums
+    }
+
+    .now.warn .big {
+      color: var(--warn)
+    }
+
+    .now.over .big {
+      color: var(--over)
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 14px
+    }
+
+    .sub b {
+      color: var(--ink)
+    }
+
+    .pbar {
+      height: 8px;
+      background: var(--soft);
+      border-radius: 99px;
+      margin-top: 12px;
+      overflow: hidden
+    }
+
+    .pbar i {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: var(--pc);
+      border-radius: 99px;
+      transition: width .25s linear
+    }
+
+    .state-pill {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 99px;
+      background: var(--soft);
+      color: var(--muted)
+    }
+
+    .state-pill.run {
+      background: var(--ok-bg);
+      color: var(--ok)
+    }
+
+    .totals {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 18px;
+      align-content: start
+    }
+
+    .stat .k {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em
+    }
+
+    .stat .v {
+      font-family: var(--mono);
+      font-size: 30px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums
+    }
+
+    .stat.wide {
+      grid-column: 1/-1
+    }
+
+    .next {
+      border-top: 1px dashed var(--line);
+      padding-top: 10px;
+      font-size: 14px
+    }
+
+    /* ---------- timeline ---------- */
+    .timeline {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 16px 32px;
+      margin-bottom: 14px
+    }
+
+    .tl-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 8px
+    }
+
+    .prep-pill {
+      padding: 3px 9px;
+      font-size: 11.5px;
+      border-radius: 999px
+    }
+
+    .track {
+      position: relative;
+      display: flex;
+      height: 46px;
+      border-radius: 10px;
+      overflow: visible
+    }
+
+    .seg {
+      position: relative;
+      height: 100%;
+      border-right: 2px solid var(--card);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 700;
+      line-height: 1.15;
+      text-align: center;
+      overflow: hidden;
+      opacity: .62;
+      transition: opacity .2s;
+      padding: 0 2px
+    }
+
+    .seg:first-child {
+      border-radius: 10px 0 0 10px
+    }
+
+    .seg:last-child {
+      border-radius: 0 10px 10px 0;
+      border-right: 0
+    }
+
+    .seg.done {
+      opacity: .38
+    }
+
+    .seg.cur {
+      opacity: 1
+    }
+
+    .seg.sel {
+      outline: 3px solid var(--ink);
+      outline-offset: -3px;
+      opacity: 1
+    }
+
+    .seg small {
+      font-weight: 500;
+      opacity: .92;
+      font-size: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%
+    }
+
+    .needle {
+      position: absolute;
+      top: -6px;
+      bottom: -6px;
+      width: 3px;
+      background: var(--ink);
+      border-radius: 2px;
+      left: 0;
+      pointer-events: none;
+      transition: left .25s linear
+    }
+
+    .needle::after {
+      content: "";
+      position: absolute;
+      top: -6px;
+      left: -5px;
+      border: 6.5px solid transparent;
+      border-top-color: var(--ink)
+    }
+
+    .ticks {
+      position: relative;
+      height: 0
+    }
+
+    .tick {
+      position: absolute;
+      top: 6px;
+      transform: translateX(-50%);
+      font-size: 10.5px;
+      color: var(--muted);
+      font-weight: 600;
+      white-space: nowrap;
+      text-align: center;
+      line-height: 1.2
+    }
+
+    .tick b {
+      display: block;
+      color: var(--ink);
+      font-size: 10.5px
+    }
+
+    /* ---------- main layout & stepper/TOC ---------- */
+    .layout {
+      display: grid;
+      grid-template-columns: 288px 1fr;
+      gap: 16px;
+      align-items: start
+    }
+
+    .stepper {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px;
+      position: sticky;
+      top: 12px;
+      max-height: calc(100vh - 24px);
+      overflow-y: auto
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 46px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 11px;
+      cursor: pointer;
+      border: 1px solid transparent
+    }
+
+    .step:hover {
+      background: var(--soft)
+    }
+
+    .step.sel {
+      background: var(--soft);
+      border-color: var(--line)
+    }
+
+    .step .dot {
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+      border-radius: 8px;
+      padding: 5px 0;
+      text-align: center
+    }
+
+    .step .nm {
+      font-weight: 700;
+      font-size: 13.5px;
+      line-height: 1.25
+    }
+
+    .step .tm {
+      font-size: 11.5px;
+      color: var(--muted);
+      font-weight: 500
+    }
+
+    .step .cnt {
+      font-size: 11.5px;
+      color: var(--muted);
+      font-weight: 700;
+      font-family: var(--mono)
+    }
+
+    .step.cur .nm::after {
+      content: " ●";
+      color: var(--ok);
+      font-size: 11px
+    }
+
+    .step.done .nm {
+      color: var(--muted)
+    }
+
+    .follow {
+      margin: 6px 0 8px;
+      width: 100%;
+      justify-content: center
+    }
+
+    .toc-box {
+      border-top: 1px dashed var(--line);
+      margin-top: 8px;
+      padding-top: 10px
+    }
+
+    .toc-title {
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin: 0 6px 6px
+    }
+
+    .toc-link {
+      display: block;
+      padding: 4px 8px;
+      border-radius: 7px;
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.35
+    }
+
+    .toc-link:hover {
+      background: var(--soft);
+      color: var(--ink);
+      text-decoration: none
+    }
+
+    .toc-link.sub {
+      padding-left: 18px;
+      font-size: 12px
+    }
+
+    .toc-link.active {
+      background: var(--soft);
+      color: var(--ink);
+      font-weight: 700
+    }
+
+    /* ---------- active phase panel ---------- */
+    #panelHost {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-width: 0
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 22px 24px;
+      border-top: 6px solid var(--pc);
+      min-width: 0
+    }
+
+    .p-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 6px
+    }
+
+    .p-head h2 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -.01em;
+      flex: 1 1 auto
+    }
+
+    .p-meta {
+      color: var(--muted);
+      font-size: 13.5px;
+      margin-bottom: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    .p-actions {
+      display: flex;
+      gap: 6px
+    }
+
+    .goalbox {
+      background: color-mix(in srgb, var(--pc) 9%, var(--card));
+      border: 1px solid color-mix(in srgb, var(--pc) 32%, var(--card));
+      border-radius: 13px;
+      padding: 14px 16px;
+      margin-bottom: 16px
+    }
+
+    .goalbox h3 {
+      margin: 0 0 6px;
+      font-size: 13.5px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: color-mix(in srgb, var(--pc) 80%, var(--ink))
+    }
+
+    .cols {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 18px
+    }
+
+    .sec {
+      margin-bottom: 16px
+    }
+
+    .sec h3 {
+      margin: 0 0 8px;
+      font-size: 12.5px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted)
+    }
+
+    ul.chk {
+      list-style: none;
+      margin: 0;
+      padding: 0
+    }
+
+    ul.chk li {
+      display: grid;
+      grid-template-columns: 22px 1fr;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--soft);
+      align-items: start
+    }
+
+    ul.chk li:last-child {
+      border-bottom: 0
+    }
+
+    ul.chk input {
+      width: 17px;
+      height: 17px;
+      margin: 3px 0 0;
+      accent-color: var(--pc);
+      cursor: pointer
+    }
+
+    ul.chk li.checked span {
+      color: var(--muted);
+      text-decoration: line-through;
+      text-decoration-color: var(--muted)
+    }
+
+    ul.chk .num {
+      font-weight: 800;
+      color: var(--pc);
+      margin-right: 4px
+    }
+
+    ul.plain {
+      margin: 0;
+      padding-left: 18px
+    }
+
+    ul.plain li {
+      margin: 5px 0
+    }
+
+    .q {
+      background: var(--soft);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14.5px
+    }
+
+    .q b.qtitle {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 4px
+    }
+
+    .cmd {
+      display: flex;
+      align-items: stretch;
+      margin: 8px 0;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--line)
+    }
+
+    .cmd pre {
+      margin: 0;
+      flex: 1;
+      background: var(--code-bg);
+      color: var(--code-ink);
+      font-family: var(--mono);
+      font-size: 12.6px;
+      padding: 10px 12px;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      overflow-x: auto
+    }
+
+    .cmd button {
+      border: 0;
+      background: var(--code-bar);
+      color: #e5dfd2;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 0 12px;
+      cursor: pointer;
+      min-width: 68px;
+      flex-shrink: 0
+    }
+
+    .cmd button:hover {
+      background: var(--pc);
+      color: #fff
+    }
+
+    .cmd .cm {
+      display: block;
+      color: #a8a294;
+      font-size: 11.5px;
+      margin-bottom: 3px
+    }
+
+    .note {
+      border-left: 3px solid var(--warn);
+      background: var(--warn-bg);
+      padding: 9px 12px;
+      border-radius: 0 10px 10px 0;
+      margin: 6px 0;
+      font-size: 14px
+    }
+
+    .rub {
+      font-size: 13.5px;
+      color: var(--muted);
+      background: var(--soft);
+      padding: 10px 12px;
+      border-radius: 10px
+    }
+
+    .rub strong {
+      color: var(--ink)
+    }
+
+    /* ---------- deep walkthrough inside phase ---------- */
+    .deep-wrap {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 2px dashed var(--line)
+    }
+
+    .deep-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap
+    }
+
+    .deep-banner h3 {
+      margin: 0;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted)
+    }
+
+    .deep-h {
+      font-size: 16.5px;
+      font-weight: 800;
+      margin: 20px 0 8px;
+      color: var(--ink);
+      scroll-margin-top: 18px
+    }
+
+    .deep-ol {
+      padding-left: 20px;
+      margin: 8px 0 14px
+    }
+
+    .deep-ol li {
+      margin: 7px 0
+    }
+
+    .sub-li {
+      margin-top: 4px;
+      padding-left: 10px;
+      color: var(--muted);
+      font-size: 14px
+    }
+
+    .callout {
+      margin: 14px 0;
+      padding: 12px 15px;
+      border-radius: 10px;
+      border-left: 4px solid var(--info-ink);
+      background: var(--info-bg)
+    }
+
+    .callout-warning {
+      border-left-color: var(--warn);
+      background: var(--warn-bg)
+    }
+
+    .callout-danger {
+      border-left-color: var(--over);
+      background: var(--over-bg)
+    }
+
+    .callout-success {
+      border-left-color: var(--ok);
+      background: var(--ok-bg)
+    }
+
+    .callout-title {
+      font-weight: 800;
+      font-size: 14px;
+      margin-bottom: 4px
+    }
+
+    .callout-body p:first-child {
+      margin-top: 0
+    }
+
+    .callout-body p:last-child {
+      margin-bottom: 0
+    }
+
+    .checklist-box {
+      margin: 14px 0;
+      padding: 12px 15px;
+      border-radius: 11px;
+      border: 1px solid var(--line);
+      background: var(--soft)
+    }
+
+    .checklist-success {
+      border-color: var(--ok-line);
+      background: var(--ok-bg)
+    }
+
+    .checklist-title {
+      font-weight: 800;
+      font-size: 14px;
+      margin-bottom: 6px
+    }
+
+    .repo-card {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--soft)
+    }
+
+    .repo-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      font-weight: 800
+    }
+
+    .repo-title {
+      font-size: 15.5px;
+      font-weight: 800;
+      margin: 2px 0 4px
+    }
+
+    .repo-url {
+      margin-bottom: 8px
+    }
+
+    .repo-links {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap
+    }
+
+    .repo-pill {
+      background: var(--ink);
+      color: var(--bg);
+      border-color: var(--ink)
+    }
+
+    .repo-pill:hover {
+      text-decoration: none;
+      opacity: .9
+    }
+
+    .code-tabs {
+      margin: 14px 0;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      overflow: hidden;
+      background: var(--card)
+    }
+
+    .code-tabs-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--soft);
+      border-bottom: 1px solid var(--line)
+    }
+
+    .code-tabs-title {
+      font-size: 13px;
+      font-weight: 700
+    }
+
+    .tab-btns {
+      display: flex;
+      gap: 6px
+    }
+
+    .tab-btn {
+      cursor: pointer;
+      border: 1px solid var(--line);
+      background: var(--card);
+      color: var(--muted);
+      padding: 4px 10px;
+      border-radius: 7px;
+      font-size: 12.5px;
+      font-weight: 700
+    }
+
+    .tab-btn.active {
+      background: var(--ink);
+      color: var(--bg);
+      border-color: var(--ink)
+    }
+
+    .tab-panel {
+      display: none
+    }
+
+    .tab-panel.active {
+      display: block
+    }
+
+    .tab-panel .cmd {
+      margin: 0;
+      border: 0;
+      border-radius: 0
+    }
+
+    /* ---------- figures & lightbox ---------- */
+    .lab-figure {
+      margin: 14px 0;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--soft);
+      text-align: center
+    }
+
+    .lab-figure img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      cursor: zoom-in;
+      display: block;
+      margin: 0 auto;
+      box-shadow: 0 3px 12px rgba(0, 0, 0, .08)
+    }
+
+    .lab-figure figcaption {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--muted)
+    }
+
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      background: rgba(15, 14, 12, .92);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 24px
+    }
+
+    .lightbox.open {
+      display: flex
+    }
+
+    .lightbox img {
+      max-width: 92vw;
+      max-height: 80vh;
+      border-radius: 10px;
+      box-shadow: 0 12px 42px rgba(0, 0, 0, .6)
+    }
+
+    .lightbox-cap {
+      color: #f3efe6;
+      margin-top: 12px;
+      font-size: 14px;
+      text-align: center;
+      max-width: 860px
+    }
+
+    .lightbox-idx {
+      color: #aca598;
+      font-family: var(--mono);
+      font-size: 12px;
+      margin-top: 4px
+    }
+
+    .lb-btn {
+      position: fixed;
+      cursor: pointer;
+      background: rgba(255, 255, 255, .14);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, .25);
+      border-radius: 999px;
+      width: 44px;
+      height: 44px;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center
+    }
+
+    .lb-btn:hover {
+      background: rgba(255, 255, 255, .28)
+    }
+
+    .lb-close {
+      top: 18px;
+      right: 22px
+    }
+
+    .lb-prev {
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%)
+    }
+
+    .lb-next {
+      right: 20px;
+      top: 50%;
+      transform: translateY(-50%)
+    }
+
+    /* ---------- reference & troubleshooting cards ---------- */
+    .ref {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 16px
+    }
+
+    .refcard {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px 20px;
+      min-width: 0;
+      overflow-x: auto
+    }
+
+    .refcard.wide {
+      grid-column: 1/-1
+    }
+
+    .refcard.wide td:first-child {
+      width: 35%;
+      padding-right: 14px
+    }
+
+    .refcard.wide td code {
+      word-break: normal;
+      overflow-wrap: anywhere
+    }
+
+    @media (max-width:599px) {
+      .refcard.wide table {
+        table-layout: fixed
+      }
+    }
+
+    .refcard h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      font-weight: 800
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 13.5px
+    }
+
+    td,
+    th {
+      padding: 7px 6px;
+      border-bottom: 1px solid var(--soft);
+      vertical-align: top;
+      text-align: left
+    }
+
+    .ref-thresh td:last-child {
+      text-align: right;
+      font-weight: 700;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      white-space: nowrap
+    }
+
+    .kbd {
+      font-family: var(--mono);
+      font-size: 11px;
+      border: 1px solid var(--line);
+      border-bottom-width: 2px;
+      border-radius: 5px;
+      padding: 0 5px;
+      background: var(--card);
+      color: var(--ink)
+    }
+
+    .foot {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 12.5px;
+      text-align: center
+    }
+
+    /* ---------- toast ---------- */
+    .toast {
+      position: fixed;
+      left: 50%;
+      top: 18px;
+      transform: translate(-50%, -150%);
+      background: var(--ink);
+      color: var(--bg);
+      padding: 14px 20px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 15.5px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .28);
+      z-index: 80;
+      transition: transform .35s cubic-bezier(.2, .9, .3, 1.2);
+      max-width: min(720px, 92vw);
+      display: flex;
+      gap: 14px;
+      align-items: center
+    }
+
+    .toast.show {
+      transform: translate(-50%, 0)
+    }
+
+    .toast.warn {
+      background: var(--warn);
+      color: #fff
+    }
+
+    .toast.go {
+      background: var(--ok);
+      color: #fff
+    }
+
+    .toast button {
+      background: rgba(255, 255, 255, .2);
+      border: 0;
+      color: #fff;
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 5px 10px;
+      cursor: pointer
+    }
+
+    /* ---------- presentation mode ---------- */
+    body.present .stepper,
+    body.present .ref,
+    body.present .hide-present,
+    body.present .deep-wrap,
+    body.present .foot {
+      display: none
+    }
+
+    body.present .layout {
+      grid-template-columns: 1fr
+    }
+
+    body.present .big {
+      font-size: 150px
+    }
+
+    body.present .phase-name {
+      font-size: 32px
+    }
+
+    body.present .panel {
+      font-size: 18px
+    }
+
+    body.present ul.chk li {
+      padding: 8px 0
+    }
+
+    body.present .cols {
+      grid-template-columns: 1.2fr 1fr
+    }
+
+    [hidden] {
+      display: none !important
+    }
+
+    @media (max-width:980px) {
+
+      .hero,
+      .layout,
+      .cols,
+      .ref {
+        grid-template-columns: 1fr
+      }
+
+      .stepper {
+        position: static;
+        max-height: none
+      }
+
+      .big {
+        font-size: 70px
+      }
+
+      .seg {
+        font-size: 0
+      }
+
+      .seg small {
+        font-size: 0
+      }
+    }
+
+    @media (max-width:720px) {
+      .timeline {
+        padding-bottom: 62px
+      }
+
+      .tick {
+        font-size: 9.5px
+      }
+
+      .tick b {
+        font-size: 9.5px
+      }
+
+      .tick.tick-stagger {
+        top: 30px
+      }
+
+      .tick.tick-stagger::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: -24px;
+        width: 1px;
+        height: 22px;
+        background: color-mix(in srgb, var(--muted) 45%, transparent)
+      }
+
+      .tick.tick-cp6 {
+        transform: translateX(-50%) !important
+      }
+
+      .tick.tick-cp6::before {
+        left: 50%
+      }
+    }
+
+    /* ---------- print / PDF export ---------- */
+    @page {
+      size: A4;
+      margin: 13mm 12mm 14mm 12mm
+    }
+
+    @media print {
+      :root {
+        --bg: #fff;
+        --card: #fff;
+        --ink: #1d1c1a;
+        --muted: #5c574f;
+        --line: #dcd6ca;
+        --soft: #f4f1ea
+      }
+
+      html,
+      body {
+        background: #fff !important;
+        color: #1d1c1a !important;
+        font-size: 12.5px;
+        line-height: 1.48;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact
+      }
+
+      .wrap {
+        max-width: none;
+        padding: 0
+      }
+
+      .controls,
+      .hero,
+      .p-actions,
+      .stepper,
+      .follow,
+      .cmd button,
+      .tab-btns,
+      .toast,
+      .lightbox,
+      .deep-banner button,
+      #tlPct,
+      .needle,
+      .kbd-hint,
+      .tl-interactive-hint,
+      .prep-pill {
+        display: none !important
+      }
+
+      .wall-clock-wrap {
+        display: none !important
+      }
+
+      .timeline {
+        padding: 10px 12px 28px;
+        margin-bottom: 12px;
+        background: #fffdf9 !important;
+        break-inside: avoid
+      }
+
+      .track {
+        height: 32px
+      }
+
+      .tick {
+        top: 6px !important;
+        font-size: 10.5px !important
+      }
+
+      .tick b {
+        font-size: 10.5px !important
+      }
+
+      .tick::before {
+        display: none !important
+      }
+
+      .tick.tick-cp6 {
+        transform: translateX(-100%) !important
+      }
+
+      .seg {
+        opacity: 1 !important;
+        outline: none !important;
+        font-size: 10.5px !important
+      }
+
+      .seg small {
+        display: none !important
+      }
+
+      .layout {
+        display: block
+      }
+
+      #panelHost {
+        display: block
+      }
+
+      .panel {
+        margin-bottom: 14px;
+        padding: 14px 16px;
+        background: #fff !important;
+        border-radius: 12px
+      }
+
+      .cols {
+        display: block
+      }
+
+      .deep-slot {
+        display: block !important
+      }
+
+      .tab-panel {
+        display: block !important;
+        border-bottom: 1px solid #3c3932
+      }
+
+      .tab-panel:last-child {
+        border-bottom: 0
+      }
+
+      .goalbox,
+      .callout,
+      .checklist-box,
+      .repo-card,
+      .cmd,
+      .code-tabs,
+      .lab-figure,
+      .note,
+      .q,
+      .refcard,
+      tr {
+        break-inside: avoid
+      }
+
+      h2,
+      h3,
+      .deep-h,
+      .p-head,
+      .deep-banner {
+        break-after: avoid
+      }
+
+      .lab-figure {
+        margin: 10px 0;
+        padding: 8px
+      }
+
+      .lab-figure img {
+        max-height: 95mm;
+        width: auto;
+        max-width: 100%;
+        box-shadow: none
+      }
+
+      .ref {
+        display: block;
+        margin-top: 12px
+      }
+
+      .refcard {
+        margin-bottom: 12px;
+        background: #fff !important
+      }
+
+      pre {
+        font-size: 11px !important;
+        padding: 8px 10px !important
+      }
+
+      a {
+        color: #1d4ed8 !important;
+        text-decoration: none
+      }
+
+      a.repo-pill {
+        background: #fff !important;
+        color: #1d4ed8 !important;
+        border: 1.5px solid #1d4ed8 !important
+      }
+    }
+
+    body.print-mode {
+      background: #fff !important;
+      color: #1d1c1a !important
+    }
+
+    body.print-mode .controls,
+    body.print-mode .hero,
+    body.print-mode .p-actions,
+    body.print-mode .stepper,
+    body.print-mode .follow,
+    body.print-mode .cmd button,
+    body.print-mode .tab-btns,
+    body.print-mode .toast,
+    body.print-mode .deep-banner button,
+    body.print-mode #tlPct,
+    body.print-mode .needle,
+    body.print-mode .wall-clock-wrap,
+    body.print-mode .kbd-hint,
+    body.print-mode .tl-interactive-hint,
+    body.print-mode .seg small,
+    body.print-mode .prep-pill {
+      display: none !important
+    }
+
+    body.print-mode .layout {
+      display: block
+    }
+
+    body.print-mode .cols {
+      display: block
+    }
+
+    body.print-mode .ref {
+      display: block
+    }
+
+    body.print-mode .refcard {
+      margin-bottom: 12px;
+      background: #fff !important
+    }
+
+    body.print-mode .tab-panel {
+      display: block !important;
+      border-bottom: 1px solid #3c3932
+    }
+
+    body.print-mode .tab-panel:last-child {
+      border-bottom: 0
+    }
+
+    body.print-mode .deep-slot {
+      display: block !important
+    }
+
+    body.print-mode .seg {
+      opacity: 1 !important;
+      outline: none !important
+    }
+
+    body.print-mode .lab-figure img {
+      max-height: 95mm;
+      width: auto;
+      max-width: 100%
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <div class="top">
+      <div class="title">
+        <div class="title-badges">
+          <span class="tbadge">D08</span>
+          <span class="tbadge">individual · cá nhân</span>
+          <span class="tbadge">36 ảnh · 240 phút trên lớp</span>
+        </div>
+        <h1>Day 08 Lab — AI hỗ trợ gán nhãn: Pre-label, Review &amp; Calibration</h1>
+        <p>Bài cá nhân · 4 giờ trên lớp (+ ~45′ chuẩn bị) · YOLO26 · YOLOE · SAM · CVAT Review &amp; 12 ảnh bẫy ·
+          Calibration v1.1 &amp; QC</p>
+      </div>
+      <div class="controls">
+        <button class="btn primary" id="bStart" title="Phím tắt: Space">▶ Bắt đầu</button>
+        <button class="btn" data-adj="-5" title="Lùi 5 phút">−5′</button>
+        <button class="btn" data-adj="-1" title="Lùi 1 phút">−1′</button>
+        <button class="btn" data-adj="1" title="Tiến 1 phút">+1′</button>
+        <button class="btn" data-adj="5" title="Tiến 5 phút">+5′</button>
+        <label class="sync" title="Nhập giờ lớp thực sự bắt đầu để đồng bộ đồng hồ">
+          Bắt đầu lúc <input type="time" id="syncTime"><button class="btn" id="bSync">Đồng bộ</button>
+        </label>
+        <button class="btn" id="bViewAll" title="Chuyển giữa chế độ từng pha và xem toàn bộ">📖 Xem tất cả</button>
+        <button class="btn" id="bTheme" title="Phím tắt: T">🌙 Tối</button>
+        <button class="btn" id="bSound" title="Bật/tắt âm báo">🔔 Âm báo</button>
+        <button class="btn" id="bPresent" title="Phím tắt: P">🖥 Trình chiếu</button>
+        <button class="btn" id="bFull" title="Phím tắt: F">⛶</button>
+        <button class="btn danger" id="bReset">↺ Đặt lại</button>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="now" id="now">
+        <span class="state-pill" id="statePill">Chưa bắt đầu</span>
+        <div class="lab"><span class="cpb" id="nowCp">CP1</span><span class="phase-name" id="nowName">Pha 1 · Gán tay 4
+            ảnh gold</span><span class="mode" id="nowMode"></span></div>
+        <div class="big" id="nowLeft">25:00</div>
+        <div class="sub" id="nowSub">Còn lại tới mốc CP1</div>
+        <div class="pbar"><i id="nowBar"></i></div>
+      </div>
+      <div class="totals">
+        <div class="stat">
+          <div class="k">Đã trôi</div>
+          <div class="v" id="tElapsed">0:00:00</div>
+        </div>
+        <div class="stat">
+          <div class="k">Còn lại (tổng)</div>
+          <div class="v" id="tLeft">4:00:00</div>
+        </div>
+        <div class="stat">
+          <div class="k">Giờ hiện tại</div>
+          <div class="v" id="tClock">--:--</div>
+        </div>
+        <div class="stat">
+          <div class="k">Dự kiến kết thúc</div>
+          <div class="v" id="tEnd">--:--</div>
+        </div>
+        <div class="stat wide next" id="tNext"></div>
+      </div>
+    </div>
+
+    <div class="timeline">
+      <div class="tl-head">
+        <span>Tiến độ 240 phút trên lớp (CP1 → Nộp bài)<span class="tl-interactive-hint"> — bấm vào từng pha để xem chi
+            tiết &amp; checklist</span></span>
+        <span style="display:flex;align-items:center;gap:8px">
+          <button type="button" class="btn prep-pill" onclick="select(0,true)"
+            title="Xem phần chuẩn bị trước buổi học (~45 phút)">🔧 Xem Pha 0 · Trước lớp (~45′)</button>
+          <span id="tlPct">0%</span>
+        </span>
+      </div>
+      <div class="track" id="track">
+        <div class="needle" id="needle"></div>
+      </div>
+      <div class="ticks" id="ticks"></div>
+    </div>
+
+    <div class="layout">
+      <aside class="stepper" id="stepper"></aside>
+      <div id="panelHost"></div>
+    </div>
+
+    <div id="deepArchive" hidden>
+      <div class="deep-panel" data-deep-id="cp0">
+        <figure class="lab-figure"><img src="docs/assets/hero.png"
+            alt="Minh họa tổng thể quy trình Day 08 gồm pre-label đa model, review có bẫy trên CVAT và vòng lặp calibration"
+            onclick="openLightbox(this)">
+          <figcaption>Tổng quan Day 08: kết hợp sức mạnh gợi ý nhanh của YOLO26/YOLOE/SAM với kiểm chứng độc lập và bắt
+            bẫy trên CVAT.</figcaption>
+        </figure>
+        <p>Trước buổi học (~45 phút, không tính vào đồng hồ 240 phút trên lớp), bạn fork repository về tài khoản cá nhân
+          ở chế độ <strong>public</strong> theo quy ước <code>K5-L23-DAY08-[MSHV]-[HoTen]-AIPrelabel</code>, clone về
+          máy, thiết lập môi trường Python <code>3.10–3.13</code> (khuyến nghị <code>3.12</code>) và hoàn tất kiểm tra
+          Python + CVAT. Bạn có thể mở <a href="docs/setup_wizard.html" target="_blank"
+            rel="noopener">docs/setup_wizard.html</a> và dùng công cụ độc lập <a href="docs/day08_setup.py"
+            target="_blank" rel="noopener">docs/day08_setup.py</a> (<code>download --profile 8gb|16gb</code>,
+          <code>check [--light]</code>) để chuẩn bị trước lớp song song với <code>scripts/download_models.py</code> và
+          <code>scripts/check_env.py</code>.</p>
+        <ul class="plain">
+          <li><strong>Local đủ RAM / GPU (<code>requirements.txt</code>):</strong> cài <code>requirements.txt</code>,
+            tải <code>--set core</code> (<code>yolo26m.pt</code>, <code>yoloe-26s-seg.pt</code>,
+            <code>sam2.1_b.pt</code>), rồi chạy <code>python scripts/check_env.py --cvat http://localhost:8080</code> để
+            nhận <code>SẴN SÀNG.</code>.</li>
+          <li><strong>Máy 8 GB RAM / chỉ CPU (local nhẹ):</strong> tải
+            <code>python scripts/download_models.py --set small</code> (<code>yolo26n.pt</code>,
+            <code>yoloe-26s-seg.pt</code>, <code>sam2.1_t.pt</code>) + <code>--set sam1</code>
+            (<code>mobile_sam.pt</code>), rồi thay <code>--size n --sam sam2.1_t.pt</code> (hoặc
+            <code>mobile_sam.pt</code>) khi chạy để đạt ~0.4–4 giây/ảnh trên CPU mà vẫn chừa đủ RAM cho Docker CVAT.
+          </li>
+          <li><strong>Colab + local nhẹ (<code>requirements-local.txt</code>):</strong> cài
+            <code>requirements-local.txt</code> trên máy cho các script đo/kiểm định và đẩy inference Pha 2–3 lên Google
+            Colab theo <a href="docs/COLAB.md" target="_blank" rel="noopener">docs/COLAB.md</a>
+            (<code>notebooks/day08_colab.ipynb</code>). Khi đó <code>check_env.py</code> báo thiếu
+            <code>torch</code>/<code>ultralytics</code> là bình thường — chỉ cần thư viện nhẹ + CVAT đạt
+            <code>PASS</code>, hoặc chạy <code>python docs/day08_setup.py check --light</code> ra
+            <code>SẴN SÀNG cho buổi học.</code>.</li>
+        </ul>
+        <div class="repo-card">
+          <div class="repo-label">Repository nguồn</div>
+          <div class="repo-title">Repo gốc Day 08 — K5-L23-Day08-AI-Assisted-Labeling</div>
+          <div class="repo-url"><code>https://github.com/GlennQuagmiree/K5-L23-Day08-AI-Assisted-Labeling</code></div>
+          <div class="repo-links"><a class="btn repo-pill"
+              href="https://github.com/VinUni-AI20k/K5-L23-Day08-AI-Assisted-Labeling" target="_blank"
+              rel="noopener">Repository gốc</a></div>
+        </div>
+        <div class="code-tabs">
+          <div class="code-tabs-bar"><span class="code-tabs-title">Cài đặt môi trường, tải trọng số và tạo bộ nhãn + thư
+              mục CVAT</span>
+            <div class="tab-btns"><button type="button" class="tab-btn active" onclick="switchTab(this, 0)">Windows
+                (PowerShell)</button><button type="button" class="tab-btn" onclick="switchTab(this, 1)">macOS / Ubuntu
+                (Bash)</button></div>
+          </div>
+          <div class="tab-panel active">
+            <div class="cmd">
+              <pre><span class="cm"># Windows (PowerShell)
+</span>git clone https://github.com/&lt;github-cua-ban&gt;/K5-L23-DAY08-&lt;MSHV&gt;-&lt;HoTen&gt;-AIPrelabel.git
+cd K5-L23-DAY08-&lt;MSHV&gt;-&lt;HoTen&gt;-AIPrelabel
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -U pip
+python -m pip install -r requirements.txt
+python scripts/download_models.py --set core   # máy 8 GB / CPU: --set small rồi --set sam1
+python scripts/check_env.py --cvat http://localhost:8080
+python scripts/make_cvat_labels.py
+python scripts/prepare_workdirs.py</pre><button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+          <div class="tab-panel">
+            <div class="cmd">
+              <pre><span class="cm"># macOS / Ubuntu (Bash)
+</span>git clone https://github.com/&lt;github-cua-ban&gt;/K5-L23-DAY08-&lt;MSHV&gt;-&lt;HoTen&gt;-AIPrelabel.git
+cd K5-L23-DAY08-&lt;MSHV&gt;-&lt;HoTen&gt;-AIPrelabel
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+python -m pip install -r requirements.txt
+python scripts/download_models.py --set core   # máy 8 GB / CPU: --set small rồi --set sam1
+python scripts/check_env.py --cvat http://localhost:8080
+python scripts/make_cvat_labels.py
+python scripts/prepare_workdirs.py</pre><button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+        </div>
+        <p>Sau khi <code>prepare_workdirs.py</code> chia xong <code>work/tasks/gold/</code> (<code>4</code> ảnh) và
+          <code>work/tasks/review/</code> (<code>24</code> ảnh), bạn mở <strong>CVAT chạy bằng Docker tại
+            <code>http://localhost:8080</code></strong> (<strong>không dùng bản web <code>cvat.ai</code></strong>) theo
+          <a href="docs/CVAT_AI.md" target="_blank" rel="noopener">docs/CVAT_AI.md</a> để tạo Project
+          <code>day08-&lt;MSHV&gt;</code>. Trong tab <strong>Raw</strong>, dán toàn bộ
+          <code>cvat/labels_generated.json</code>, bấm <strong>Save</strong> (hoặc <strong>Done</strong>), rà đủ 8 nhãn
+          ở tab <strong>Constructor</strong> rồi bấm <strong>Submit &amp; Open</strong>.</p>
+        <figure class="lab-figure"><img src="walkthrough_images/01_cvat_project_labels_saved.png"
+            alt="Màn hình Create a new project trên CVAT hiển thị JSON nhãn đã dán vào tab Raw và nút Save"
+            onclick="openLightbox(this)">
+          <figcaption>Dán toàn bộ mảng nhãn từ cvat/labels_generated.json vào mục Raw rồi bấm Save trước khi Submit
+            &amp; Open.</figcaption>
+        </figure>
+        <figure class="lab-figure"><img src="walkthrough_images/01b_cvat_project_created.png"
+            alt="Trang Project trên CVAT hiển thị đủ 8 nhãn màu sau khi tạo thành công" onclick="openLightbox(this)">
+          <figcaption>Project day08-00123456 hiển thị đủ 8 nhãn trong Constructor, sẵn sàng tách Task gold và batch.
+          </figcaption>
+        </figure>
+        <div class="checklist-box checklist-info">
+          <div class="checklist-title">Tín hiệu sẵn sàng trước Pha 1</div>
+          <ul class="chk">
+            <li><input type="checkbox"
+                onclick="this.closest('li').classList.toggle('checked', this.checked)"><span>Local full
+                (<code>requirements.txt</code>): <code>python scripts/check_env.py --cvat http://localhost:8080</code>
+                báo <code>SẴN SÀNG.</code>.</span></li>
+            <li><input type="checkbox" onclick="this.closest('li').classList.toggle('checked', this.checked)"><span>Hoặc
+                Colab (<code>requirements-local.txt</code>): thư viện nhẹ + CVAT đạt và
+                <code>python docs/day08_setup.py check --light</code> báo <code>SẴN SÀNG cho buổi học.</code>
+                (<code>check_env.py</code> thiếu <code>torch</code>/<code>ultralytics</code> là bình thường).</span>
+            </li>
+            <li><input type="checkbox"
+                onclick="this.closest('li').classList.toggle('checked', this.checked)"><span><code>python scripts/prepare_workdirs.py</code>
+                tạo xong <code>work/tasks/gold/</code> (4 ảnh) và <code>work/tasks/review/</code> (24 ảnh).</span></li>
+            <li><input type="checkbox" onclick="this.closest('li').classList.toggle('checked', this.checked)"><span>Nếu
+                chạy local: có trọng số trong <code>models/</code> (<code>--set core</code> hoặc
+                <code>--set small</code> + <code>--set sam1</code>); dùng Colab thì bỏ qua.</span></li>
+            <li><input type="checkbox"
+                onclick="this.closest('li').classList.toggle('checked', this.checked)"><span>Project CVAT Docker
+                (<code>http://localhost:8080</code>) hiển thị đủ 8 nhãn kèm <code>conf</code> và
+                <code>can_review</code>, không còn lỗi JSON trống thuộc tính.</span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="deep-panel" data-deep-id="cp1">
+        <figure class="lab-figure"><img src="docs/assets/roadmap.png"
+            alt="Sơ đồ lộ trình Day 08 qua 240 phút thực hành trên lớp" onclick="openLightbox(this)">
+          <figcaption>Phân bổ 240 phút thực hành trên lớp qua 6 pha kiểm soát và chặng nộp bài.</figcaption>
+        </figure>
+        <h4 id="deep-cp1-ban-chat" class="deep-h">Bản chất vấn đề: vì sao phải khóa tập gold trước khi chạm vào model
+          AI?</h4>
+        <p>Nếu bạn chạy model YOLO26 hay YOLOE lên cả 36 ảnh trước khi gán tập gold, bộ não sẽ bị neo vào những khung
+          bao có sẵn do thuật toán vẽ ra. Hậu quả là bộ nhãn gold — vốn đóng vai trò thước đo chân lý để chọn ngưỡng ở
+          Pha 3 và tính Precision/Recall khách quan ở Pha 4 — bị nhiễm chính những thiên kiến bỏ sót hoặc sai lớp của
+          máy. Bốn ảnh gold (<code>work/tasks/gold/</code>) phải phản ánh trung thực cách hiểu của <strong>người
+            gán</strong> dựa thuần túy trên <a href="guideline/guideline_v1.0_label_contract.md" target="_blank"
+            rel="noopener">guideline/guideline_v1.0_label_contract.md</a>.</p>
+        <h4 id="deep-cp1-giai-nghia" class="deep-h">Giải nghĩa quy tắc vàng trên bộ nhãn 8 lớp</h4>
+        <p>Bộ nhãn giữ nguyên 7 lớp mục tiêu (<code>person</code>, <code>bicycle</code>, <code>motorbike</code>,
+          <code>car</code>, <code>bus</code>, <code>truck</code>, <code>three_wheeler</code>) và 1 vùng đặc biệt
+          <code>ignore_region</code>. Mọi khung đối tượng chuẩn có chiều cao tối thiểu <code>20 px</code>
+          (<code>min_box_height_px = 20</code>); cụm người/xe quá nhỏ ở nền xa hoặc đám đông dính sát nhau không thể
+          tách từng cá thể được gom bằng một box <code>ignore_region</code>. Khi gặp tình huống lưỡng lự giữa hai lớp
+          hoặc vật bị che khuất nửa thân, bạn tự quyết định theo v1.0 rồi tick thuộc tính <code>can_review</code> thành
+          <code>true</code> ngay trên box đó.</p>
+        <h4 id="deep-cp1-thiet-ke" class="deep-h">Lựa chọn thiết kế: ghi lại thời gian thật và không mở
+          <code>work/prelabel/</code></h4>
+        <p>Trong <code>submission/time_log.csv</code>, dòng <code>gold_manual</code> đo trực tiếp tốc độ gán tay nguyên
+          thủy (số phút thực tế chia 4 ảnh). Ở cuối Pha 4, bạn so sánh con số này với tốc độ duyệt lô có pre-label
+          (<code>batch_review</code>, phút trên 24 ảnh), đồng thời lưu ý ảnh hưởng của việc đã quen cảnh phố châu Á sau
+          khi làm gold.</p>
+        <div class="callout callout-warning">
+          <div class="callout-title">Tuyệt đối không dùng AI trong Pha 1</div>
+          <div class="callout-body">
+            <p>Không chạy <code>prelabel.py</code>, không bật AI Interactor trong CVAT và không tham khảo nhãn mẫu trên
+              <code>data/cache/</code> trước khi hoàn tất export <code>submission/labels/gold_manual.json</code>. Tập
+              gold chỉ có giá trị kiểm định khi được tạo hoàn toàn bằng mắt và tay của bạn.</p>
+          </div>
+        </div>
+        <h4 id="deep-cp1-cac-buoc" class="deep-h">Các bước thực hiện Pha 1</h4>
+        <ol class="deep-ol">
+          <li>Đọc kỹ <a href="guideline/guideline_v1.0_label_contract.md" target="_blank"
+              rel="noopener">guideline/guideline_v1.0_label_contract.md</a>, đặc biệt quy tắc
+            <code>ignore_region</code>, bao người lái <code>person</code> riêng với xe và cách phân biệt
+            <code>three_wheeler</code>.</li>
+          <li>Trên Project CVAT vừa tạo ở Pha 0, tạo Task mới đặt tên <code>gold-manual</code> và tải lên đúng <strong>4
+              ảnh</strong> trong <code>work/tasks/gold/</code>.</li>
+          <li>Mở Job của <code>gold-manual</code>, dùng phím <code>N</code> (Rectangle) gán đầy đủ đối tượng cho cả 4
+            ảnh, để trống <code>conf</code>, gắn cờ <code>can_review</code> cho các ca biên, bấm <code>Ctrl+S</code> lưu
+            sau mỗi ảnh và ghi tổng số phút vào <code>gold_manual</code> trong <code>submission/time_log.csv</code>.
+          </li>
+        </ol>
+        <figure class="lab-figure"><img src="walkthrough_images/02_cvat_gold_manual_workspace.png"
+            alt="Không gian gán nhãn thủ công CVAT Task gold-manual trên ảnh img_012.jpg với box three_wheeler, car, person và thuộc tính can_review"
+            onclick="openLightbox(this)">
+          <figcaption>Gán tay trực tiếp trong Task gold-manual trên CVAT: box ôm sát phần nhìn thấy, để trống conf và
+            tick can_review khi gặp ca phân vân.</figcaption>
+        </figure>
+        <ol class="deep-ol" start="4">
+          <li>Vào <strong>Actions → Export task dataset</strong>, chọn định dạng <strong>COCO 1.0</strong>, <strong>tắt
+              Save images</strong>, bấm <strong>OK</strong> rồi chuyển sang trang <strong>Requests</strong> để tải file
+            <code>.zip</code> khi tiến trình đạt 100%.</li>
+        </ol>
+        <figure class="lab-figure"><img src="walkthrough_images/03_cvat_export_coco_requests.png"
+            alt="Trang Requests trên CVAT xác nhận hoàn tất Export Annotations định dạng COCO 1.0 cho Task #23 đạt 100%"
+            onclick="openLightbox(this)">
+          <figcaption>Chờ tiến trình Export Annotations đạt Finished 100% trong mục Requests, giải nén lấy
+            annotations/instances_default.json.</figcaption>
+        </figure>
+        <ol class="deep-ol" start="5">
+          <li>Trích file <code>annotations/instances_default.json</code> lưu đè thành
+            <code>submission/labels/gold_manual.json</code>, rồi kiểm tra cấu trúc COCO, đủ 4 ảnh gold và chiều cao box
+            tối thiểu:</li>
+        </ol>
+        <div class="code-tabs">
+          <div class="code-tabs-bar"><span class="code-tabs-title">Kiểm tra file gold_manual.json sau khi export từ
+              CVAT</span>
+            <div class="tab-btns"><button type="button" class="tab-btn active" onclick="switchTab(this, 0)">Windows
+                (PowerShell)</button><button type="button" class="tab-btn" onclick="switchTab(this, 1)">macOS / Ubuntu
+                (Bash)</button></div>
+          </div>
+          <div class="tab-panel active">
+            <div class="cmd">
+              <pre><span class="cm"># Windows (PowerShell)
+</span>python scripts/validate_labels.py submission/labels/gold_manual.json --expect gold</pre><button type="button"
+                onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+          <div class="tab-panel">
+            <div class="cmd">
+              <pre><span class="cm"># macOS / Ubuntu (Bash)
+</span>python scripts/validate_labels.py submission/labels/gold_manual.json --expect gold</pre><button type="button"
+                onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+        </div>
+        <h4 id="deep-cp1-checkpoint" class="deep-h">Checkpoint Pha 1 và bước tiếp theo</h4>
+        <p>Lệnh <code>validate_labels.py --expect gold</code> phải kết thúc với dòng
+          <code>[submission\labels\gold_manual.json] 4 ảnh, &lt;số đối tượng&gt;: OK</code> (kiểm chứng thực tế đạt
+          <code>62</code> đối tượng, không lỗi schema hay lớp lạ; mọi cảnh báo chiều cao <code>&lt; 20 px</code> được rà
+          lại để chuyển sang <code>ignore_region</code> nếu quá nhỏ). Khi <code>gold_manual.json</code> đã khóa, bạn
+          chính thức mở khóa bước dùng mô hình AI ở Pha 2.</p>
+      </div>
+
+      <div class="deep-panel" data-deep-id="cp2">
+        <h4 id="deep-cp2-ban-chat" class="deep-h">Bản chất vấn đề: mỗi họ mô hình giải một bài toán nhận diện khác nhau
+        </h4>
+        <p>Khi áp dụng <strong>YOLO26</strong> (<code>yolo26m.pt</code>, detector danh mục cố định 80 lớp COCO) lên ảnh
+          phố Bangkok hay Hà Nội, mô hình bắt rất chắc <code>person</code>, <code>motorbike</code> và <code>car</code>,
+          nhưng không có khái niệm <code>three_wheeler</code> nên gọi nhầm tuk-tuk thành <code>car</code> hoặc
+          <code>truck</code>. Ngược lại, <strong>YOLOE-26s</strong> (<code>yoloe-26s-seg.pt</code>, open-vocabulary theo
+          prompt chữ <code>--classes three_wheeler</code>) tìm được tuk-tuk nhưng box sinh ra thường lỏng hơn, dễ trùng
+          hai box chồng nhau hoặc gộp nhầm xe đẩy hàng rong. Cuối cùng, <strong>SAM</strong> (<code>sam2.1_b.pt</code>,
+          <code>sam2.1_t.pt</code>, <code>mobile_sam.pt</code> hoặc SAM 3) biến bounding box hoặc điểm click thành
+          polygon/mask bám sát biên vật thể, đánh đổi thời gian xử lý lâu hơn đáng kể trên CPU.</p>
+        <figure class="lab-figure"><img src="docs/assets/model_families.png"
+            alt="So sánh ba họ model pre-label gồm detector đóng YOLO26, open-vocabulary YOLOE và segmenter SAM"
+            onclick="openLightbox(this)">
+          <figcaption>Vai trò bổ trợ của ba họ mô hình: YOLO26 làm nền nhanh cho lớp phổ biến, YOLOE vá lớp lạ như
+            three_wheeler, SAM xuất polygon chuẩn.</figcaption>
+        </figure>
+        <h4 id="deep-cp2-giai-nghia" class="deep-h">Giải nghĩa tác động của ngưỡng và cảnh báo tham số PowerShell</h4>
+        <p>Trong <code>scripts/prelabel.py</code>, nâng <code>--conf</code> từ <code>0.25</code> lên <code>0.5</code>
+          giúp giảm box rác ở nền xa nhưng có thể làm mất hơn 35% người đi bộ hoặc xe máy nhỏ. Mọi lượt chạy qua
+          <code>prelabel.py</code> đều tự động lưu JSON kết quả (<code>pre.coco.json</code>), ảnh trong
+          <code>viz/</code> và log vào <code>work/runs.csv</code>. Trên Windows PowerShell, bắt buộc bọc ngoặc kép quanh
+          tham số chứa dấu phẩy (<code>--classes "person,motorbike,car"</code>) để PowerShell không tách chuỗi thành
+          mảng đối số.</p>
+        <h4 id="deep-cp2-thiet-ke" class="deep-h">Lựa chọn thiết kế: tách cache theo lượt chạy và ghi log trung thực
+        </h4>
+        <p>Bạn giữ riêng từng thư mục (<code>t_y26</code>, <code>t_y26_c05</code>, <code>t_yoloe</code>,
+          <code>t_sam</code>) trên tập 8 ảnh <code>pilot</code> (hoặc 2 ảnh <code>img_004.jpg</code>,
+          <code>img_013.jpg</code> cho SAM trên CPU), rồi chép số liệu vào <code>submission/model_log.csv</code> kèm
+          nhận xét ở <code>what_went_wrong</code> và <code>decision</code>. Với máy 8 GB RAM / chỉ CPU đã tải
+          <code>--set small</code> + <code>--set sam1</code>, đổi <code>--size m</code> → <code>--size n</code> (tùy
+          chọn <code>--imgsz 640</code>) và <code>--sam sam2.1_b.pt</code> → <code>sam2.1_t.pt</code> hoặc
+          <code>mobile_sam.pt</code> (~0.4–4s/ảnh), hoặc chạy <a href="docs/COLAB.md" target="_blank"
+            rel="noopener">Google Colab</a> (<code>notebooks/day08_colab.ipynb</code>) và tải kết quả về giải nén vào
+          <code>work/prelabel/</code>.</p>
+        <h4 id="deep-cp2-cac-buoc" class="deep-h">Các bước thực hiện Pha 2</h4>
+        <ol class="deep-ol">
+          <li>Chạy thử nghiệm 4 lượt model trên tập <code>pilot</code> (8 ảnh) và hai ảnh thử SAM (lưu ý dấu ngoặc kép
+            trên PowerShell):</li>
+        </ol>
+        <div class="code-tabs">
+          <div class="code-tabs-bar"><span class="code-tabs-title">Chạy Tour 3 model: YOLO26 (conf 0.25 vs 0.5), YOLOE
+              và YOLO26+SAM</span>
+            <div class="tab-btns"><button type="button" class="tab-btn active" onclick="switchTab(this, 0)">Windows
+                (PowerShell)</button><button type="button" class="tab-btn" onclick="switchTab(this, 1)">macOS / Ubuntu
+                (Bash)</button></div>
+          </div>
+          <div class="tab-panel active">
+            <div class="cmd">
+              <pre><span class="cm"># Windows (PowerShell)
+</span>python scripts/prelabel.py --model yolo26 --size m --split pilot --conf 0.25 --out work/prelabel/t_y26
+python scripts/prelabel.py --model yolo26 --size m --split pilot --conf 0.5 --out work/prelabel/t_y26_c05
+python scripts/prelabel.py --model yoloe --classes three_wheeler --split pilot --conf 0.25 --out work/prelabel/t_yoloe
+python scripts/prelabel.py --model yolo26 --size m --classes "person,motorbike,car" --images img_004.jpg img_013.jpg --conf 0.3 --segmenter sam --sam sam2.1_b.pt --out work/prelabel/t_sam</pre>
+              <button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+          <div class="tab-panel">
+            <div class="cmd">
+              <pre><span class="cm"># macOS / Ubuntu (Bash)
+</span>python scripts/prelabel.py --model yolo26 --size m --split pilot --conf 0.25 --out work/prelabel/t_y26
+python scripts/prelabel.py --model yolo26 --size m --split pilot --conf 0.5 --out work/prelabel/t_y26_c05
+python scripts/prelabel.py --model yoloe --classes three_wheeler --split pilot --conf 0.25 --out work/prelabel/t_yoloe
+python scripts/prelabel.py --model yolo26 --size m --classes "person,motorbike,car" --images img_004.jpg img_013.jpg --conf 0.3 --segmenter sam --sam sam2.1_b.pt --out work/prelabel/t_sam</pre>
+              <button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+        </div>
+        <ol class="deep-ol" start="2">
+          <li>Mở ảnh đối chiếu trong <code>work/prelabel/t_y26/viz/</code>, <code>t_y26_c05/viz/</code>,
+            <code>t_yoloe/viz/</code> và <code>t_sam/viz/</code> để so sánh lỗi bỏ sót, sai lớp và độ khít viền polygon.
+          </li>
+        </ol>
+        <figure class="lab-figure"><img src="walkthrough_images/04_model_tour_yolo26_vs_yoloe_img002.jpg"
+            alt="So sánh ảnh img_002.jpg giữa YOLO26m ở conf 0.25 bỏ sót tuk-tuk và YOLOE-26s phát hiện đúng three_wheeler với độ tin cậy 0.93"
+            onclick="openLightbox(this)">
+          <figcaption>Đối chiếu thực tế trên img_002.jpg: YOLO26m bỏ sót hoàn toàn chiếc tuk-tuk xanh ở tiền cảnh, trong
+            khi YOLOE-26s tìm đúng three_wheeler (0.93) dù vẫn sinh box thừa 0.37 ở xe bán tải.</figcaption>
+        </figure>
+        <figure class="lab-figure"><img src="walkthrough_images/05_prelabel_sam_img013.jpg"
+            alt="Kết quả chạy YOLO26m kết hợp SAM 2.1 trên ảnh img_013.jpg với đường polygon bao quanh người và xe máy nhưng khung tuk-tuk bị gắn nhầm nhãn car"
+            onclick="openLightbox(this)">
+          <figcaption>Kết quả t_sam trên img_013.jpg: SAM cắt mask người và xe sát viền nhưng hộp đầu vào từ YOLO26 vẫn
+            gán nhầm tuk-tuk thành car (0.42).</figcaption>
+        </figure>
+        <ol class="deep-ol" start="3">
+          <li>Mở <code>work/runs.csv</code>, chuyển các dòng chạy thực tế vào <code>submission/model_log.csv</code> và
+            điền nhận xét vào <code>what_went_right</code>, <code>what_went_wrong</code>, <code>decision</code>.</li>
+        </ol>
+        <h4 id="deep-cp2-checkpoint" class="deep-h">Checkpoint Pha 2 và bước tiếp theo</h4>
+        <p>Pha 2 hoàn thành khi <code>submission/model_log.csv</code> có ít nhất 4 dòng thuộc tối thiểu 3 biến thể/model
+          (kèm 1 lượt có <code>sam</code>), không để trống <code>what_went_wrong</code>, và bạn chỉ ra ít nhất một lỗi
+          không thể sửa chỉ bằng việc tăng/giảm <code>--conf</code>.</p>
+      </div>
+
+      <div class="deep-panel" data-deep-id="cp3">
+        <h4 id="deep-cp3-ban-chat" class="deep-h">Bản chất vấn đề: vì sao một ngưỡng chung 0.3 làm hỏng chất lượng lô
+          nhãn?</h4>
+        <p>Đặt cùng một ngưỡng tin cậy cho mọi lớp gây mất cân bằng giữa độ phủ và nhiễu: lớp có nhiều biến dạng như
+          <code>person</code> cần ngưỡng mềm hơn để giữ recall, trong khi <code>motorbike</code> đông đúc dễ phát sinh
+          nhiều box giả nếu ngưỡng quá thấp. Bằng cách chạy inference toàn tập một lần ở <code>--conf 0.05</code>
+          (<code>--no-viz</code>), bạn lưu toàn bộ ứng viên rồi dùng <code>threshold_sweep.py</code> quét 19 mức ngưỡng
+          trên gold chỉ trong vài giây.</p>
+        <h4 id="deep-cp3-giai-nghia" class="deep-h">Giải nghĩa ngưỡng mục tiêu 90% recall và bẫy mẫu nhỏ</h4>
+        <p>Script <code>threshold_sweep.py</code> chọn ngưỡng tin cậy <strong>cao nhất</strong> giữ được recall trên 4
+          ảnh gold tối thiểu <code>90%</code> (<code>recall_target = 0.9</code>). Lớp nào có dưới 5 vật trong gold (ví
+          dụ kiểm chứng chỉ có 4 <code>bicycle</code>, 1 <code>bus</code>, 1 <code>truck</code>, 4
+          <code>three_wheeler</code>) sẽ được giữ ở ngưỡng <strong>mặc định (<code>0.3</code>)</strong>. Đặc biệt, số đo
+          trong <code>threshold_sweep.md</code> luôn là kết quả <strong>in-sample</strong> trên chính 4 ảnh gold nên
+          mang tính lạc quan.</p>
+        <h4 id="deep-cp3-thiet-ke" class="deep-h">Lựa chọn thiết kế: nạp cả hai nguồn ứng viên qua <code>--pred</code>
+        </h4>
+        <p>Bạn xuất <code>work/prelabel/y26_all/pre.coco.json</code> (<code>1.669</code> box trong thử nghiệm thực tế)
+          và <code>work/prelabel/yoloe_all/pre.coco.json</code> (<code>125</code> box), rồi truyền đồng thời cả hai qua
+          <code>threshold_sweep.py --pred ...</code> để tổng hợp bảng ngưỡng theo lớp và lấy chuỗi
+          <code>--thr "..."</code> cho Pha 4. Máy 8 GB RAM / CPU thay <code>--size m</code> → <code>--size n</code> khớp
+          trọng số <code>--set small</code> (hoặc dùng <code>data/cache/</code> nếu máy/mạng quá yếu và ghi rõ vào
+          <code>REPORT.md</code>).</p>
+        <h4 id="deep-cp3-cac-buoc" class="deep-h">Các bước thực hiện Pha 3</h4>
+        <ol class="deep-ol">
+          <li>Chạy hai lượt cache ở ngưỡng <code>0.05</code> rồi quét ngưỡng qua <code>--pred</code> đối chiếu với
+            <code>submission/labels/gold_manual.json</code>:</li>
+        </ol>
+        <div class="code-tabs">
+          <div class="code-tabs-bar"><span class="code-tabs-title">Cache ứng viên conf 0.05 và quét ngưỡng theo lớp trên
+              4 ảnh gold</span>
+            <div class="tab-btns"><button type="button" class="tab-btn active" onclick="switchTab(this, 0)">Windows
+                (PowerShell)</button><button type="button" class="tab-btn" onclick="switchTab(this, 1)">macOS / Ubuntu
+                (Bash)</button></div>
+          </div>
+          <div class="tab-panel active">
+            <div class="cmd">
+              <pre><span class="cm"># Windows (PowerShell)
+</span>python scripts/prelabel.py --model yolo26 --size m --split all --conf 0.05 --out work/prelabel/y26_all --no-viz
+python scripts/prelabel.py --model yoloe --classes three_wheeler --split all --conf 0.05 --out work/prelabel/yoloe_all --no-viz
+python scripts/threshold_sweep.py --pred work/prelabel/y26_all/pre.coco.json work/prelabel/yoloe_all/pre.coco.json --gold submission/labels/gold_manual.json</pre>
+              <button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+          <div class="tab-panel">
+            <div class="cmd">
+              <pre><span class="cm"># macOS / Ubuntu (Bash)
+</span>python scripts/prelabel.py --model yolo26 --size m --split all --conf 0.05 --out work/prelabel/y26_all --no-viz
+python scripts/prelabel.py --model yoloe --classes three_wheeler --split all --conf 0.05 --out work/prelabel/yoloe_all --no-viz
+python scripts/threshold_sweep.py --pred work/prelabel/y26_all/pre.coco.json work/prelabel/yoloe_all/pre.coco.json --gold submission/labels/gold_manual.json</pre>
+              <button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+        </div>
+        <ol class="deep-ol" start="2">
+          <li>Mở <code>submission/qc/threshold_sweep.md</code>, <code>.csv</code> và <code>threshold_sweep.png</code> để
+            đọc đường cong từng lớp và chép chuỗi <code>--thr "..."</code>.</li>
+        </ol>
+        <figure class="lab-figure"><img src="walkthrough_images/06_threshold_sweep.png"
+            alt="Biểu đồ 7 đường cong Precision-Recall theo ngưỡng tin cậy từ threshold_sweep.py với vạch đỏ tại các lớp đủ mẫu"
+            onclick="openLightbox(this)">
+          <figcaption>Đồ thị quét ngưỡng trên 4 ảnh gold: person=0.35, motorbike=0.5, car=0.35 đạt >= 90% recall; các
+            lớp dưới 5 mẫu giữ ngưỡng mặc định.</figcaption>
+        </figure>
+        <div class="callout callout-warning">
+          <div class="callout-title">Kiểm tra giới hạn lạc quan trước giờ giải lao</div>
+          <div class="callout-body">
+            <p>Đọc kỹ cảnh báo mẫu nhỏ trong <code>threshold_sweep.md</code> để đưa vào mục 1 của
+              <code>REPORT.md</code>. Không ép ngưỡng cao cho các lớp chỉ có 1–4 mẫu trong gold như
+              <code>bicycle</code>, <code>bus</code>, <code>truck</code> hay <code>three_wheeler</code>.</p>
+          </div>
+        </div>
+        <h4 id="deep-cp3-checkpoint" class="deep-h">Checkpoint Pha 3 và bước tiếp theo</h4>
+        <p>Bạn chốt Pha 3 khi <code>submission/qc/</code> có đủ bộ ba file <code>threshold_sweep.*</code> kèm chuỗi
+          ngưỡng gợi ý (ví dụ <code>--thr "person=0.35,motorbike=0.5,car=0.35"</code>). Sau 10 phút nghỉ giải lao, ta
+          chuyển sang Pha 4.</p>
+      </div>
+
+      <div class="deep-panel" data-deep-id="break">
+        <p>Giờ nghỉ giữa chặng giúp mắt thư giãn sau gần một giờ thao tác trên CVAT và đọc đồ thị, đồng thời rà nhanh
+          xem bạn đã giữ đúng chuỗi <code>--thr "..."</code> từ <code>threshold_sweep.md</code> và đúng MSHV (bao gồm cả
+          số <code>0</code> đầu nếu có) để tiêm bẫy ở Pha 4 hay chưa.</p>
+      </div>
+
+      <div class="deep-panel" data-deep-id="cp4">
+        <h4 id="deep-cp4-ban-chat" class="deep-h">Bản chất vấn đề: vì sao phải gài bẫy nhân tạo vào pre-label trước khi
+          review?</h4>
+        <p>Hiện tượng nguy hiểm nhất khi duyệt nhãn máy là <strong>automation bias</strong> (thiên kiến tự động hóa):
+          hộp pre-label trông càng gọn gàng, người duyệt càng ít kiểm tra lại ảnh thật. Để đo trực diện mức độ tỉnh táo,
+          <code>inject_traps.py</code> dùng MSHV làm hạt giống ngẫu nhiên cấy <strong>12 lỗi nhân tạo</strong> (3
+          <code>wrong_class</code>, 3 <code>loose</code>, 3 <code>extra</code>, 3 <code>missing</code>) vào lô 24 ảnh
+          batch, rồi <code>review_stats.py</code> kiểm tra tỉ lệ bắt bẫy (<code>trap_catch_min = 80%</code>, tối thiểu
+          <code>10/12</code>).</p>
+        <h4 id="deep-cp4-giai-nghia" class="deep-h">Giải nghĩa <code>pre_traps.coco.json</code> vs
+          <code>pre_traps_import.coco.json</code> và bẫy số 0 đầu trên Windows</h4>
+        <p>Lệnh <code>inject_traps.py</code> tạo hai file: <code>pre_traps.coco.json</code> (đủ 28 ảnh
+          <code>batch + gold</code> cùng điểm tin cậy để chạy thống kê) và <code>pre_traps_import.coco.json</code> (chỉ
+          <strong>24 ảnh batch</strong> sạch để nạp lên Task <code>batch-review</code> trên CVAT). Khi tải lên CVAT
+          <strong>chỉ chọn <code>pre_traps_import.coco.json</code></strong>. Trên Windows PowerShell, luôn bọc
+          <code>--student "00123456"</code> và <code>--thr "..."</code> trong ngoặc kép để giữ nguyên số <code>0</code>
+          đầu và dấu phẩy.</p>
+        <h4 id="deep-cp4-thiet-ke" class="deep-h">Lựa chọn thiết kế: quy trình duyệt 4 bước chống nhìn gợi ý trước</h4>
+        <p>Trên từng bức ảnh, hãy thực hiện đủ 4 bước: (1) quét toàn ảnh theo chiều trái-phải đếm số vật <strong>trước
+            khi</strong> tin vào box màu; (2) thêm box sót (<code>N</code>) hoặc xóa box ma (<code>Del</code>); (3) soi
+          nhãn và kiểm 4 cạnh viền từng box để sửa sai lớp, kéo sát box bị hở nền (<code>loose</code>) và xóa box
+          <code>three_wheeler</code> trùng lặp của YOLOE; (4) dùng nút <strong>Filters</strong> trên thanh công cụ để rà
+          riêng từng lớp hoặc gắn cờ <code>can_review</code> cho ca khó.</p>
+        <figure class="lab-figure"><img src="docs/assets/review_checklist.png"
+            alt="Sơ đồ 4 bước checklist duyệt nhãn chống automation bias gồm quét ảnh trước, sửa thiếu-thừa, chỉnh lớp và kiểm viền 4 cạnh"
+            onclick="openLightbox(this)">
+          <figcaption>Checklist 4 bước bắt buộc cho mỗi bức ảnh khi review pre-label nhằm chặn đứng lỗi sót vật và box
+            lỏng.</figcaption>
+        </figure>
+        <h4 id="deep-cp4-cac-buoc" class="deep-h">Các bước thực hiện Pha 4</h4>
+        <ol class="deep-ol">
+          <li>Gộp pre-label (đặt <code>yoloe_all</code> đứng trước để ưu tiên <code>three_wheeler</code> thắng
+            <code>car/truck</code> của <code>y26_all</code> tại IoU &gt;= 0.6), xuất ra
+            <code>work/prelabel/merged_review/pre.coco.json</code> rồi cài 12 bẫy bằng đúng MSHV của bạn (thay
+            <code>00123456</code> bằng MSHV của bạn, giữ nguyên ngoặc kép):</li>
+        </ol>
+        <div class="code-tabs">
+          <div class="code-tabs-bar"><span class="code-tabs-title">Gộp pre-label theo ngưỡng từng lớp và tiêm 12 ảnh bẫy
+              theo MSHV</span>
+            <div class="tab-btns"><button type="button" class="tab-btn active" onclick="switchTab(this, 0)">Windows
+                (PowerShell)</button><button type="button" class="tab-btn" onclick="switchTab(this, 1)">macOS / Ubuntu
+                (Bash)</button></div>
+          </div>
+          <div class="tab-panel active">
+            <div class="cmd">
+              <pre><span class="cm"># Windows (PowerShell)
+</span>python scripts/merge_prelabels.py work/prelabel/yoloe_all/pre.coco.json work/prelabel/y26_all/pre.coco.json --thr "person=0.35,motorbike=0.5,car=0.35" --conf 0.3 --iou 0.6 --split "batch,gold" --out work/prelabel/merged_review/pre.coco.json
+python scripts/inject_traps.py --pre work/prelabel/merged_review/pre.coco.json --student "00123456"</pre><button
+                type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+          <div class="tab-panel">
+            <div class="cmd">
+              <pre><span class="cm"># macOS / Ubuntu (Bash)
+</span>python scripts/merge_prelabels.py work/prelabel/yoloe_all/pre.coco.json work/prelabel/y26_all/pre.coco.json --thr "person=0.35,motorbike=0.5,car=0.35" --conf 0.3 --iou 0.6 --split "batch,gold" --out work/prelabel/merged_review/pre.coco.json
+python scripts/inject_traps.py --pre work/prelabel/merged_review/pre.coco.json --student "00123456"</pre><button
+                type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+        </div>
+        <ol class="deep-ol" start="2">
+          <li>Trên Project CVAT đã có ở Pha 0, tạo Task mới đặt tên <code>batch-review</code> và tải lên toàn bộ
+            <strong>24 ảnh</strong> trong <code>work/tasks/review/</code>.</li>
+          <li>Vào <strong>Actions → Upload annotations</strong> trên Task <code>batch-review</code>, chọn <strong>Import
+              format: COCO 1.0</strong>, chọn tệp <code>submission/prelabel/pre_traps_import.coco.json</code>, giữ
+            <strong>Import mode: Replace</strong> (hoặc chuyển <strong>Append</strong> nếu muốn giữ nhãn cũ) rồi bấm
+            <strong>OK</strong>.</li>
+        </ol>
+        <div class="callout callout-danger">
+          <div class="callout-title">Lưu ý quan trọng trên CVAT 2.74.1 sau khi bấm OK</div>
+          <div class="callout-body">
+            <p>Khi <code>Import mode</code> đang để <code>Replace</code>, sau khi bấm <strong>OK</strong> trên hộp thoại
+              Upload annotations, CVAT hiện thêm hộp thoại xác nhận <strong>Replace existing annotations?</strong>. Phải
+              bấm tiếp nút <strong>Replace annotations</strong> thì nhãn mới được nạp thật vào Task (nếu đóng nhầm hộp
+              thoại thứ hai, Job vẫn có 0 shape).</p>
+          </div>
+        </div>
+        <figure class="lab-figure"><img src="walkthrough_images/07_cvat_upload_pre_traps_import.png"
+            alt="Hộp thoại Import annotation to task trên CVAT chọn định dạng COCO 1.0 và tệp pre_traps_import.coco.json"
+            onclick="openLightbox(this)">
+          <figcaption>Nạp đúng tệp submission/prelabel/pre_traps_import.coco.json theo định dạng COCO 1.0 trong Actions
+            → Upload annotations.</figcaption>
+        </figure>
+        <ol class="deep-ol" start="4">
+          <li>Mở Job của <code>batch-review</code>, duyệt đủ 24 ảnh theo checklist 4 bước, dùng nút
+            <strong>Filters</strong> để rà theo lớp và tick <code>can_review</code> trong bảng <strong>Objects</strong>
+            cho ca biên. Nhớ <code>Ctrl+S</code> thường xuyên và ghi thời gian duyệt vào <code>batch_review</code> của
+            <code>submission/time_log.csv</code>.</li>
+        </ol>
+        <figure class="lab-figure"><img src="walkthrough_images/08_cvat_batch_review_job_ui.png"
+            alt="Màn hình Job review 24 ảnh trong CVAT hiển thị ảnh img_013.jpg với nhãn three_wheeler, thuộc tính conf=0.63, can_review và nút Filters trên thanh công cụ"
+            onclick="openLightbox(this)">
+          <figcaption>Giao diện duyệt batch-review trong CVAT: dùng bảng Objects bên phải xem conf/can_review và nút
+            Filters trên thanh top bar.</figcaption>
+        </figure>
+        <ol class="deep-ol" start="5">
+          <li>Export <strong>COCO 1.0</strong> (tắt Save images), giải nén
+            <code>annotations/instances_default.json</code> lưu thành
+            <code>submission/labels/batch_reviewed.json</code>, rồi chạy kiểm định nhãn và tính thống kê review với đầy
+            đủ <code>--pre</code>, <code>--final</code>, <code>--gold</code>, <code>--key</code>:</li>
+        </ol>
+        <div class="code-tabs">
+          <div class="code-tabs-bar"><span class="code-tabs-title">Kiểm tra nhãn batch sau duyệt và tính AI error
+              profile + tỉ lệ bắt bẫy</span>
+            <div class="tab-btns"><button type="button" class="tab-btn active" onclick="switchTab(this, 0)">Windows
+                (PowerShell)</button><button type="button" class="tab-btn" onclick="switchTab(this, 1)">macOS / Ubuntu
+                (Bash)</button></div>
+          </div>
+          <div class="tab-panel active">
+            <div class="cmd">
+              <pre><span class="cm"># Windows (PowerShell)
+</span>python scripts/validate_labels.py --all
+python scripts/review_stats.py --pre submission/prelabel/pre_traps.coco.json --final submission/labels/batch_reviewed.json --gold submission/labels/gold_manual.json --key submission/prelabel/traps_key.json</pre>
+              <button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+          <div class="tab-panel">
+            <div class="cmd">
+              <pre><span class="cm"># macOS / Ubuntu (Bash)
+</span>python scripts/validate_labels.py --all
+python scripts/review_stats.py --pre submission/prelabel/pre_traps.coco.json --final submission/labels/batch_reviewed.json --gold submission/labels/gold_manual.json --key submission/prelabel/traps_key.json</pre>
+              <button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+        </div>
+        <h4 id="deep-cp4-checkpoint" class="deep-h">Checkpoint Pha 4 và bước tiếp theo</h4>
+        <p><code>validate_labels.py --all</code> báo <code>OK</code> cho cả 4 ảnh gold và 24 ảnh batch;
+          <code>submission/qc/review_stats.md</code> hiển thị bảng 4 trạng thái, Precision/Recall so với gold và tỉ lệ
+          bắt bẫy <strong>&gt;= 80%</strong> (kiểm chứng thực tế đạt <code>11/12 = 91.7%</code>). Tiếp theo, sang Pha 5
+          để tách mask SAM cho 3 vật khó.</p>
+      </div>
+
+      <div class="deep-panel" data-deep-id="cp5">
+        <h4 id="deep-cp5-ban-chat" class="deep-h">Bản chất vấn đề: vì sao box chữ nhật bất lực trước vật thể rỗng ruột
+          và chen chúc?</h4>
+        <p>Với xe tuk-tuk có mái che khung sắt hở nền hoặc người ngồi sát nhau trên băng ghế, bounding box chữ nhật chứa
+          nhiều phần nền và đối tượng phía sau. Phân đoạn theo điểm với <strong>SAM</strong> dùng cặp điểm dương
+          (<code>--pos</code>) mở rộng mặt nạ lên xe mục tiêu và điểm âm (<code>--neg</code>) cắt gọn phần người lái
+          hoặc vỉa hè ngay tại biên tiếp xúc.</p>
+        <h4 id="deep-cp5-giai-nghia" class="deep-h">Giải nghĩa lựa chọn phiên bản SAM và chuẩn guideline mục 4.2</h4>
+        <p>Trong <code>scripts/sam2_points.py</code>, bạn có thể dùng <code>sam2.1_b.pt</code> (SAM 2.1 base),
+          <code>mobile_sam.pt</code> (SAM 1 gọn nhẹ trên CPU) hoặc biến thể SAM 3 (cần quyền tải), tùy chọn thêm khung
+          <code>--box "x1,y1,x2,y2"</code>. Theo <strong>mục 4.2</strong> của
+          <code>guideline_v1.0_label_contract.md</code>, mask của phương tiện như <code>three_wheeler</code> chỉ ôm
+          khung xe, mái che và bánh xe; người lái (<code>person</code>) và hàng hóa nhô ngoài phải được tách bằng điểm
+          <code>--neg</code>.</p>
+        <h4 id="deep-cp5-thiet-ke" class="deep-h">Lựa chọn thiết kế: so sánh trực tiếp SAM 2.1 vs MobileSAM trên cùng
+          một xe</h4>
+        <p>Chạy thử cả <code>sam2.1_b.pt</code> và <code>mobile_sam.pt</code> trên cùng tọa độ click của một chiếc
+          tuk-tuk (như <code>img_013.jpg</code>) để ghi nhận xét định tính rõ ràng vào mục 5 của <code>REPORT.md</code>
+          xem bản nào giữ viền kim loại, bánh xe tốt hơn và bản nào dễ lem nền.</p>
+        <h4 id="deep-cp5-cac-buoc" class="deep-h">Các bước thực hiện Pha 5</h4>
+        <ol class="deep-ol">
+          <li>Chọn 3 ảnh có đối tượng khó (<code>img_013.jpg</code>, <code>img_004.jpg</code>,
+            <code>img_017.jpg</code>), mở ảnh xem tọa độ pixel rồi chạy <code>sam2_points.py</code>: truyền
+            <code>--image &lt;tên_ảnh&gt;</code> (script tự đọc trong <code>data/images/</code>), lặp lại cờ
+            <code>--pos "x,y"</code> / <code>--neg "x,y"</code> (bọc ngoặc kép trên PowerShell), và đặt
+            <code>--out submission/masks --name &lt;tên_file&gt;</code>.</li>
+        </ol>
+        <div class="code-tabs">
+          <div class="code-tabs-bar"><span class="code-tabs-title">Tách mask 3 đối tượng khó bằng SAM 2.1 và đối chiếu
+              với MobileSAM</span>
+            <div class="tab-btns"><button type="button" class="tab-btn active" onclick="switchTab(this, 0)">Windows
+                (PowerShell)</button><button type="button" class="tab-btn" onclick="switchTab(this, 1)">macOS / Ubuntu
+                (Bash)</button></div>
+          </div>
+          <div class="tab-panel active">
+            <div class="cmd">
+              <pre><span class="cm"># Windows (PowerShell)
+</span>python scripts/sam2_points.py --image img_013.jpg --pos "400,480" --pos "600,110" --neg "720,300" --sam sam2.1_b.pt --out submission/masks --name tuktuk_img013_sam2
+python scripts/sam2_points.py --image img_013.jpg --pos "400,480" --pos "600,110" --neg "720,300" --sam mobile_sam.pt --out submission/masks --name tuktuk_img013_sam1
+python scripts/sam2_points.py --image img_004.jpg --pos "620,480" --pos "700,560" --neg "465,450" --sam sam2.1_b.pt --out submission/masks --name tuktuk_img004_sam2
+python scripts/sam2_points.py --image img_017.jpg --pos "560,420" --pos "680,500" --neg "645,355" --sam sam2.1_b.pt --out submission/masks --name tuktuk_img017_sam2</pre>
+              <button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+          <div class="tab-panel">
+            <div class="cmd">
+              <pre><span class="cm"># macOS / Ubuntu (Bash)
+</span>python scripts/sam2_points.py --image img_013.jpg --pos "400,480" --pos "600,110" --neg "720,300" --sam sam2.1_b.pt --out submission/masks --name tuktuk_img013_sam2
+python scripts/sam2_points.py --image img_013.jpg --pos "400,480" --pos "600,110" --neg "720,300" --sam mobile_sam.pt --out submission/masks --name tuktuk_img013_sam1
+python scripts/sam2_points.py --image img_004.jpg --pos "620,480" --pos "700,560" --neg "465,450" --sam sam2.1_b.pt --out submission/masks --name tuktuk_img004_sam2
+python scripts/sam2_points.py --image img_017.jpg --pos "560,420" --pos "680,500" --neg "645,355" --sam sam2.1_b.pt --out submission/masks --name tuktuk_img017_sam2</pre>
+              <button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+        </div>
+        <ol class="deep-ol" start="2">
+          <li>Mở từng ảnh trong <code>submission/masks/</code> kiểm tra điểm xanh (<code>--pos</code>), điểm đỏ
+            (<code>--neg</code>), xem 1 điểm âm đã đủ tách người lái chưa (thử thêm <code>--neg</code> nếu còn dính) và
+            điền bảng mục 5 của <code>REPORT.md</code> cùng dòng chạy SAM trong <code>model_log.csv</code>.</li>
+        </ol>
+        <figure class="lab-figure"><img src="walkthrough_images/09_sam_points_mask_tuktuk.jpg"
+            alt="Ảnh img_013.jpg với mask SAM 2.1 phủ màu hồng trên thân xe tuk-tuk nhờ hai điểm xanh dương và một điểm đỏ âm đặt lên người lái"
+            onclick="openLightbox(this)">
+          <figcaption>Mask tách bằng sam2_points.py trên img_013.jpg: hai điểm xanh (400,480; 600,110) phủ toàn xe
+            tuk-tuk, còn một điểm đỏ (720,300) mới khoét bớt lưng áo người lái chứ chưa tách hết đầu và chân — lý do cần
+            thêm click âm hoặc --box.</figcaption>
+        </figure>
+        <h4 id="deep-cp5-checkpoint" class="deep-h">Checkpoint Pha 5 và bước tiếp theo</h4>
+        <p>Thư mục <code>submission/masks/</code> có ít nhất <strong>3 tệp <code>.jpg</code></strong> rõ nét kèm phần so
+          sánh vào mục 5 của <code>REPORT.md</code>. Tiếp theo, sang Pha 6 để build bản release, kiểm QC và chốt
+          guideline v1.1.</p>
+      </div>
+
+      <div class="deep-panel" data-deep-id="cp6">
+        <h4 id="deep-cp6-ban-chat" class="deep-h">Bản chất vấn đề: vì sao không thể kết thúc bài ngay sau khi bấm Save
+          trên CVAT?</h4>
+        <p>Ngay cả khi bắt tốt ảnh bẫy, người duyệt vẫn có điểm mù riêng như sót người khuất sau sạp hàng hay bỏ qua hai
+          hộp <code>three_wheeler</code> chồng đè mà YOLOE sinh ra. Quy trình QC cuối lô rút ra tối đa <strong>3 ảnh
+            <code>can_review</code> + 5 ảnh ngẫu nhiên (<code>--seed 42</code>)</strong> từ 24 ảnh batch để soi theo ID
+          từng box, đối chiếu ngưỡng <code>error_rate_img_max = 2%</code> và biến mọi vướng mắc thành quy tắc mới trong
+          <code>guideline_v1.1_calibrated.md</code>.</p>
+        <h4 id="deep-cp6-giai-nghia" class="deep-h">Giải nghĩa cây quyết định Hold → Rework → Release và giới hạn Wilson
+          95%</h4>
+        <p>Đọc <code>submission/qc/qc_report_auto.md</code> theo thứ tự <strong>Hold → Rework → Release</strong>: chọn
+          <strong>Hold</strong> nếu guideline còn câu hỏi chưa chốt (<code>--guideline-gap &gt; 0</code>) hoặc ảnh gốc
+          hỏng (<code>--data-problem &gt; 0</code>); chọn <strong>Rework</strong> nếu tỉ lệ ảnh lỗi
+          <code>&gt; 2%</code>, có lỗi hệ thống, bắt bẫy <code>&lt; 80%</code> hoặc tự kiểm không đạt; chỉ chọn
+          <strong>Release</strong> khi sạch cả hai. Ngay cả khi 0/7 ảnh lỗi, cận trên 95% (Wilson) của tỉ lệ lỗi thật
+          vẫn là <strong>35%</strong> (với 4/7 ảnh lỗi ở mẫu E2E thực tế, cận trên lên tới <strong>84%</strong>) — phải
+          nêu rõ giới hạn mẫu nhỏ này trong <code>REPORT.md</code>.</p>
+        <figure class="lab-figure"><img src="docs/assets/decision_tree.png"
+            alt="Cây quyết định QC theo thứ tự kiểm Hold, Rework và Release" onclick="openLightbox(this)">
+          <figcaption>Cây quyết định Hold → Rework → Release đi kèm báo cáo tự động qc_report_auto.md và luận giải tại
+            REPORT.md.</figcaption>
+        </figure>
+        <h4 id="deep-cp6-thiet-ke" class="deep-h">Lựa chọn thiết kế: ghi nhận trung thực Rework kèm ca lỗi mắt thấy trên
+          overlay</h4>
+        <p><code>qc_sample.py</code> xuất ảnh gắn ID từng vật vào <code>work/qc/review/img_0xx.jpg</code>. Điền lỗi thật
+          quan sát được vào <code>submission/qc/qc_review.csv</code> bằng một trong các giá trị chuẩn
+          (<code>khong</code>, <code>bo_sot</code>, <code>thua</code>, <code>sai_lop</code>,
+          <code>sai_vi_tri_kich_thuoc</code>, <code>sai_thuoc_tinh</code>, <code>sai_mask</code>). Nếu quyết định là
+          <strong>Rework</strong>, viết rõ danh sách cần sửa (hoặc sửa lại trên CVAT xuất thành
+          <code>submission/labels/qc_fixed.json</code> rồi chạy lại <code>build_release.py</code>).</p>
+        <h4 id="deep-cp6-cac-buoc" class="deep-h">Các bước thực hiện Pha 6</h4>
+        <ol class="deep-ol">
+          <li>Tạo gói release candidate và rút mẫu kiểm QC 5 ảnh ngẫu nhiên kèm ca <code>can_review</code>:</li>
+        </ol>
+        <div class="code-tabs">
+          <div class="code-tabs-bar"><span class="code-tabs-title">Sinh bản release candidate và rút mẫu QC có đánh số
+              ID đối tượng</span>
+            <div class="tab-btns"><button type="button" class="tab-btn active" onclick="switchTab(this, 0)">Windows
+                (PowerShell)</button><button type="button" class="tab-btn" onclick="switchTab(this, 1)">macOS / Ubuntu
+                (Bash)</button></div>
+          </div>
+          <div class="tab-panel active">
+            <div class="cmd">
+              <pre><span class="cm"># Windows (PowerShell)
+</span>python scripts/build_release.py
+python scripts/qc_sample.py --n 5 --seed 42</pre><button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+          <div class="tab-panel">
+            <div class="cmd">
+              <pre><span class="cm"># macOS / Ubuntu (Bash)
+</span>python scripts/build_release.py
+python scripts/qc_sample.py --n 5 --seed 42</pre><button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+        </div>
+        <ol class="deep-ol" start="2">
+          <li>Mở từng ảnh trong <code>work/qc/review/</code>, điền đủ dòng vào <code>submission/qc/qc_review.csv</code>,
+            rồi chạy <code>python scripts/qc_report.py</code> để sinh <code>submission/qc/qc_report_auto.md</code>.</li>
+        </ol>
+        <figure class="lab-figure"><img src="walkthrough_images/10_qc_review_overlay.jpg"
+            alt="Ảnh work/qc/review/img_013.jpg hiển thị ID từng bounding box sau duyệt làm lộ hai khung #115 và #116 three_wheeler chồng đè lên nhau"
+            onclick="openLightbox(this)">
+          <figcaption>Ảnh kiểm QC work/qc/review/img_013.jpg: in ID từng box giúp phát hiện nhanh lỗi trùng lặp #115 và
+            #116 three_wheeler (thua).</figcaption>
+        </figure>
+        <ol class="deep-ol" start="3">
+          <li>Điền tối thiểu <strong>3 quyết định</strong> vào <code>submission/qc/calibration_decisions.csv</code> (gồm
+            đủ <code>loi_may</code>, <code>cau_hoi_mo</code> và <code>can_review</code> hoặc <code>bay_lot</code>) và
+            tổng hợp vào <code>submission/guidelines/guideline_v1.1_calibrated.md</code> kèm <code>img_0xx</code> ví dụ.
+          </li>
+          <li>Hoàn thiện đủ 8 mục trong <code>submission/REPORT.md</code> (mọi con số kèm mẫu số, cận trên Wilson 95%,
+            quyết định <code>Release / Hold / Rework</code>) và bảng tóm tắt ở <code>STUDENT.md</code>.</li>
+        </ol>
+        <div class="callout callout-info">
+          <div class="callout-title">Tự kiểm tính đầy đủ dữ liệu trước khi đóng pha</div>
+          <div class="callout-body">
+            <p>Bảo đảm không còn ký hiệu <code>&lt;&lt;</code> chưa điền trong <code>README.md</code>,
+              <code>STUDENT.md</code>, <code>submission/REPORT.md</code> và
+              <code>submission/guidelines/guideline_v1.1_calibrated.md</code>; các file CSV đều mã hóa UTF-8 và khớp số
+              liệu với <code>submission/qc/</code>.</p>
+          </div>
+        </div>
+        <h4 id="deep-cp6-checkpoint" class="deep-h">Checkpoint Pha 6 và bước tiếp theo</h4>
+        <p>Pha 6 hoàn tất khi có đủ <code>submission/release/final_det.coco.json</code> +
+          <code>release_manifest.json</code>, <code>qc_report_auto.md</code>, <code>guideline_v1.1_calibrated.md</code>,
+          <code>calibration_decisions.csv</code> và <code>REPORT.md</code> trọn vẹn cả 8 mục. Chặng cuối là rà lỗi tự
+          động và nộp bài.</p>
+      </div>
+
+      <div class="deep-panel" data-deep-id="submit">
+        <p>Trước khi gửi link lên LMS (<code>https://aithucchien.vinuni.edu.vn</code>), bạn đổi dòng tiêu đề đầu tiên
+          của <code>README.md</code> đúng mẫu <code># Day 08 Lab — &lt;MSHV&gt; - &lt;Họ và tên&gt;</code>, cập nhật
+          commit hash vào <code>STUDENT.md</code> và chạy <code>python scripts/check_submission.py</code> để xác nhận
+          trạng thái <code>0 lỗi, 0 cảnh báo</code>. Script tự động rà trạng thái Git để ngăn trọng số
+          <code>.pt/.onnx/.ts</code> trong <code>models/</code> lọt vào commit, đối chiếu MSHV giữa
+          <code>README.md</code> và <code>traps_key.json</code>, đồng thời gọi <code>validate_labels.py --all</code>.
+        </p>
+        <div class="code-tabs">
+          <div class="code-tabs-bar"><span class="code-tabs-title">Kiểm tra toàn bộ bài nộp và đối chiếu trạng thái Git
+              trước khi push</span>
+            <div class="tab-btns"><button type="button" class="tab-btn active" onclick="switchTab(this, 0)">Windows
+                (PowerShell)</button><button type="button" class="tab-btn" onclick="switchTab(this, 1)">macOS / Ubuntu
+                (Bash)</button></div>
+          </div>
+          <div class="tab-panel active">
+            <div class="cmd">
+              <pre><span class="cm"># Windows (PowerShell)
+</span>python scripts/check_submission.py
+git status</pre><button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+          <div class="tab-panel">
+            <div class="cmd">
+              <pre><span class="cm"># macOS / Ubuntu (Bash)
+</span>python scripts/check_submission.py
+git status</pre><button type="button" onclick="copyPre(this)">Copy</button>
+            </div>
+          </div>
+        </div>
+        <p>Nếu cần lưu thêm bản nộp dự phòng trên LMS theo chuẩn thư mục cá nhân <code>K5-DAY08-HoVaTen-MSSV/</code>,
+          vẫn giữ nguyên cấu trúc repo public <code>K5-L23-DAY08-[MSHV]-[HoTen]-AIPrelabel</code> trên GitHub để giữ
+          trọn lịch sử commit các pha. Tuyệt đối không ghi mật khẩu CVAT, token hoặc email cá nhân vào file hay ảnh
+          chụp.</p>
+        <div class="checklist-box checklist-success">
+          <div class="checklist-title">Checklist bàn giao Day 08 trước khi push</div>
+          <ul class="chk">
+            <li><input type="checkbox" onclick="this.closest('li').classList.toggle('checked', this.checked)"><span>Dòng
+                đầu <code>README.md</code> có dạng <code># Day 08 Lab — &lt;MSHV&gt; - &lt;Họ và tên&gt;</code>, khớp
+                <code>traps_key.json</code>.</span></li>
+            <li><input type="checkbox"
+                onclick="this.closest('li').classList.toggle('checked', this.checked)"><span><code>python scripts/check_submission.py</code>
+                trả về <code>0 lỗi, 0 cảnh báo. Sạch lỗi: có thể nộp.</code>.</span></li>
+            <li><input type="checkbox"
+                onclick="this.closest('li').classList.toggle('checked', this.checked)"><span><code>git status</code>
+                không có file trọng số <code>.pt / .pth / .onnx / .ts</code> hoặc khóa/token bí mật.</span></li>
+            <li><input type="checkbox" onclick="this.closest('li').classList.toggle('checked', this.checked)"><span>Đã
+                đẩy đủ commit lên repo public <code>K5-L23-DAY08-[MSHV]-[HoTen]-AIPrelabel</code> và nộp link trên
+                LMS.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="ref" id="refSection">
+      <div class="refcard">
+        <h3>📏 Ngưỡng cần nhớ (từ <code>taxonomy.json → rules</code>, không được sửa)</h3>
+        <table class="ref-thresh">
+          <tr>
+            <td>Mục tiêu recall khi quét ngưỡng trên gold (<code>threshold_sweep</code>)</td>
+            <td>≥ 90%</td>
+          </tr>
+          <tr>
+            <td>Ghép 1–1 &amp; ngưỡng tính <code>accepted</code> box / mask</td>
+            <td>IoU ≥ 0.5 / 0.9 / 0.85</td>
+          </tr>
+          <tr>
+            <td>Tỉ lệ bắt ảnh bẫy trong 12 bẫy (<code>review_stats</code>)</td>
+            <td>≥ 80% (≥ 10/12)</td>
+          </tr>
+          <tr>
+            <td>Chiều cao box chuẩn tối thiểu (nhỏ hơn → <code>ignore_region</code>)</td>
+            <td>≥ 20 px</td>
+          </tr>
+          <tr>
+            <td>Tỉ lệ ảnh có lỗi trong mẫu QC để được <strong>Release</strong></td>
+            <td>≤ 2%</td>
+          </tr>
+          <tr>
+            <td>Số người tự kiểm (nếu dùng <code>self_consistency</code>): IoU TB / cùng lớp</td>
+            <td>≥ 0.85 / ≥ 95%</td>
+          </tr>
+          <tr>
+            <td>Số lượng tối thiểu ảnh <code>gold</code> / <code>batch</code> / mask SAM</td>
+            <td>4 / 24 / ≥ 3</td>
+          </tr>
+        </table>
+      </div>
+      <div class="refcard">
+        <h3>⚖️ Quy tắc vàng (quy chuẩn hiện hành)</h3>
+        <ul class="plain">
+          <li><b>Gán tay 4 ảnh gold trước:</b> Hoàn tất <code>gold_manual.json</code> hoàn toàn không AI trước khi chạy
+            bất kỳ model pre-label nào.</li>
+          <li><b>Giữ nguyên <code>models/</code> ngoài Git:</b> Trọng số <code>.pt/.onnx/.ts</code> tải vào
+            <code>models/</code> được <code>.gitignore</code> chặn sẵn, không ép commit.</li>
+          <li><b>Bọc ngoặc kép trên PowerShell:</b> Luôn viết <code>--student "00123456"</code>,
+            <code>--classes "person,motorbike,car"</code>, <code>--thr "person=0.35,car=0.35"</code>,
+            <code>--pos "400,480"</code> để tránh mất số 0 đầu hoặc tách dấu phẩy.</li>
+          <li><b>Chọn đúng file nạp CVAT:</b> Dùng <code>pre_traps_import.coco.json</code> cho Upload annotations; khi ở
+            chế độ <code>Replace</code> nhớ bấm thêm <b>Replace annotations</b>.</li>
+          <li><b>Trung thực với số đo:</b> Hold/Rework có dẫn chứng <code>CAL-xx</code> và Wilson 95% CI đúng mẫu số vẫn
+            đạt điểm cao hơn Release giả tạo.</li>
+          <li><b>Nộp public + LMS:</b> Fork public tên <code>K5-L23-DAY08-[MSHV]-[HoTen]-AIPrelabel</code> kèm link trên
+            <code>aithucchien.vinuni.edu.vn</code>.</li>
+        </ul>
+        <p class="kbd-hint" style="margin:12px 0 0;font-size:12.5px;color:var(--muted)">
+          Phím tắt: <span class="kbd">Space</span> chạy/dừng · <span class="kbd">←</span><span class="kbd">→</span> pha
+          trước/sau ·
+          <span class="kbd">T</span> sáng/tối · <span class="kbd">P</span> trình chiếu · <span class="kbd">F</span> toàn
+          màn hình
+        </p>
+      </div>
+      <div class="refcard wide">
+        <h3>🛠️ Bảng xử lý lỗi hay gặp khi chạy script, PowerShell &amp; CVAT</h3>
+        <table>
+          <tr>
+            <td>CVAT báo lỗi khi dán JSON vào <code>Raw</code></td>
+            <td>Chạy lại <code>python scripts/make_cvat_labels.py</code> lấy bản mới nhất (mọi thuộc tính có mảng
+              <code>values</code> không rỗng), dán vào <b>Raw</b> → <b>Save</b> → <b>Submit &amp; Open</b>.</td>
+          </tr>
+          <tr>
+            <td>Import xong<br><code>pre_traps_import.coco.json</code><br>mà Job vẫn 0 shape</td>
+            <td>Khi <code>Import mode</code> đang để <b>Replace</b>, sau khi bấm <b>OK</b> phải bấm tiếp nút xác nhận
+              <b>Replace annotations</b> ở hộp thoại thứ hai.</td>
+          </tr>
+          <tr>
+            <td><code>inject_traps</code> báo mismatch MSHV hoặc PowerShell cắt số <code>0</code> đầu</td>
+            <td>Luôn bọc ngoặc kép <code>--student "00123456"</code> khớp từng ký tự với dòng đầu
+              <code>README.md</code>; truyền <code>--pre work/prelabel/merged_review/pre.coco.json</code> và không dùng
+              <code>pre_traps.coco.json</code> để upload lên CVAT.</td>
+          </tr>
+          <tr>
+            <td><code>merge_prelabels</code> / <code>sam2_points</code> báo sai tham số hoặc không tìm thấy ảnh</td>
+            <td>Bọc ngoặc kép quanh chuỗi có dấu phẩy (<code>--thr "person=0.35,car=0.35"</code>); với
+              <code>sam2_points.py</code> chỉ truyền tên ảnh (<code>--image img_013.jpg</code>), lặp lại từng cờ
+              <code>--pos "400,480" --pos "600,110"</code> và truyền thư mục qua
+              <code>--out submission/masks --name ...</code>.</td>
+          </tr>
+          <tr>
+            <td><code>check_submission</code> báo commit <code>models/</code></td>
+            <td>Kiểm <code>git status</code>, chạy <code>git rm --cached models/*.pt</code> (giữ
+              <code>models/.gitkeep</code>) và kiểm tra lại với <code>python scripts/check_submission.py</code>.</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="foot">
+      Chuẩn hóa theo <code>K5-L23-Day08-AI-Assisted-Labeling</code> (<a href="GUIDE.md" target="_blank">GUIDE.md</a>, <a
+        href="CHECKPOINTS.md" target="_blank">CHECKPOINTS.md</a>, <a href="RUBRIC.md" target="_blank">RUBRIC.md</a>, <a
+        href="SUBMISSION.md" target="_blank">SUBMISSION.md</a>). Mốc giờ là điểm tự kiểm tại lớp, không phải hạn nộp.
+    </div>
+  </div>
+
+  <div class="toast" id="toast"><span id="toastMsg"></span><button type="button" id="toastX">OK</button></div>
+
+  <div class="lightbox" id="lightbox" onclick="if(event.target===this) closeLightbox()">
+    <button type="button" class="lb-btn lb-close" onclick="closeLightbox()" aria-label="Đóng">×</button>
+    <button type="button" class="lb-btn lb-prev" onclick="stepLightbox(-1)" aria-label="Ảnh trước">‹</button>
+    <img id="lbImg" src="" alt="">
+    <div class="lightbox-cap" id="lbCap"></div>
+    <div class="lightbox-idx" id="lbIdx"></div>
+    <button type="button" class="lb-btn lb-next" onclick="stepLightbox(1)" aria-label="Ảnh sau">›</button>
+  </div>
+
+  <script>
+    const TOTAL = 240;
+    const PHASES = [
+      {
+        id: "cp0", cp: "CP0", pha: "Pha 0", name: "Chuẩn bị môi trường & CVAT",
+        start: 0, dur: 0, prepLabel: "Trước lớp · ~45′", mode: "setup", color: "#5b6b82",
+        goals: [
+          "Local full (`requirements.txt`): `python scripts/check_env.py --cvat http://localhost:8080` báo **SẴN SÀNG.** (Python 3.10–3.13)",
+          "Hoặc Colab + local nhẹ (`requirements-local.txt`): thư viện nhẹ + CVAT đạt và `python docs/day08_setup.py check --light` báo **SẴN SÀNG cho buổi học.** (`check_env.py` báo thiếu `torch`/`ultralytics` là bình thường)",
+          "`python scripts/make_cvat_labels.py` và `python scripts/prepare_workdirs.py` tạo xong 4 gold + 24 batch",
+          "Đã tạo Project CVAT Docker (`http://localhost:8080`, không dùng `cvat.ai`) `day08-<MSHV>` đủ 8 nhãn kèm `conf` và `can_review`"
+        ],
+        tasks: [
+          "Fork public repo `K5-L23-DAY08-[MSHV]-[HoTen]-AIPrelabel` và `git clone` về máy (tùy chọn mở [docs/setup_wizard.html](docs/setup_wizard.html) và dùng [docs/day08_setup.py](docs/day08_setup.py) chuẩn bị trước buổi học)",
+          "Tạo `.venv` Python 3.10–3.13 (khuyến nghị 3.12) và cài `requirements.txt` (máy local) hoặc `requirements-local.txt` (nếu chạy inference trên Colab)",
+          "Nếu chạy local: tải `--set core` (máy 8 GB RAM / chỉ CPU dùng `--set small` + `--set sam1`, rồi chạy `--size n --sam sam2.1_t.pt` hoặc `mobile_sam.pt` ~0.4–4s/ảnh để chừa RAM cho Docker CVAT)",
+          "Chạy `python scripts/check_env.py --cvat http://localhost:8080` (local full → `SẴN SÀNG.`) hoặc `python docs/day08_setup.py check --light` (Colab/local nhẹ → `SẴN SÀNG cho buổi học.`)",
+          "Chạy `python scripts/make_cvat_labels.py` và `python scripts/prepare_workdirs.py`",
+          "Mở CVAT Docker tại `http://localhost:8080` (không dùng `cvat.ai`) → tạo Project từ `cvat/labels_generated.json` (Raw → **Save** → **Submit & Open**)"
+        ],
+        cmds: [
+          { m: "Cài đặt, tải trọng số & kiểm tra (máy 8 GB / CPU: dùng --set small rồi --set sam1; hoặc dùng docs/day08_setup.py)", c: "python -m pip install -U pip\npython -m pip install -r requirements.txt\npython scripts/download_models.py --set core\npython scripts/check_env.py --cvat http://localhost:8080\npython scripts/make_cvat_labels.py\npython scripts/prepare_workdirs.py" }
+        ],
+        outputs: [
+          "Local full: `check_env.py --cvat http://localhost:8080` báo `SẴN SÀNG.`; hoặc Colab (`requirements-local.txt`): `docs/day08_setup.py check --light` báo `SẴN SÀNG cho buổi học.`",
+          "Bộ thư mục `work/tasks/gold/` (4 ảnh) và `work/tasks/review/` (24 ảnh)",
+          "Project CVAT Docker (`http://localhost:8080`) `day08-<MSHV>` đủ 8 nhãn + `conf` + `can_review`"
+        ],
+        understand: "Không commit file trọng số trong `models/` lên Git. Máy 8 GB RAM / CPU có thể chạy local bằng `--set small` + `--set sam1` (`--size n --sam sam2.1_t.pt` hoặc `mobile_sam.pt`, ~0.4–4s/ảnh) để chừa RAM cho Docker CVAT, hoặc chỉ cài `requirements-local.txt` và đẩy inference Pha 2–3 lên Google Colab (`notebooks/day08_colab.ipynb`).",
+        notes: [
+          "Công cụ chuẩn bị trước lớp (tùy chọn): mở `docs/setup_wizard.html` hoặc chạy `docs/day08_setup.py` (`download --profile 8gb|16gb`, `check [--light]`).",
+          "Ở màn hình tạo Project CVAT Docker (`http://localhost:8080`), dán toàn bộ `cvat/labels_generated.json` vào **Raw**, bấm **Save** (hoặc **Done**), kiểm tab **Constructor** đủ 8 nhãn rồi mới bấm **Submit & Open**."
+        ],
+        rubric: "Mục 7–8 · Reproducibility & trình bày (10đ): chạy sạch trên môi trường sạch, log không lộ secret/weights.",
+        subToc: []
+      },
+      {
+        id: "cp1", cp: "CP1", pha: "Pha 1", name: "Gán tay 4 ảnh gold",
+        start: 0, dur: 25, mode: "manual", color: "#2563eb",
+        goals: [
+          "Xuất thành công `submission/labels/gold_manual.json` gán hoàn toàn bằng tay trên 4 ảnh gold",
+          "`python scripts/validate_labels.py submission/labels/gold_manual.json --expect gold` trả về `OK`",
+          "Ghi nhận thời gian thật vào dòng `gold_manual` của `submission/time_log.csv`"
+        ],
+        tasks: [
+          "Đọc kỹ `guideline/guideline_v1.0_label_contract.md` (quy tắc `three_wheeler`, người lái `person` riêng, `ignore_region` cho cụm `< 20 px`)",
+          "Tạo Task `gold-manual` trên CVAT và tải lên đúng 4 ảnh trong `work/tasks/gold/`",
+          "Vẽ toàn bộ đối tượng bằng phím `N` (Rectangle), để trống `conf`, tick `can_review` cho ca phân vân, lưu `Ctrl+S`",
+          "Export **COCO 1.0** (tắt Save images) → tải từ **Requests** → lưu `submission/labels/gold_manual.json`",
+          "Chạy `python scripts/validate_labels.py submission/labels/gold_manual.json --expect gold` tới khi báo `OK`"
+        ],
+        cmds: [
+          { m: "Kiểm tra hợp lệ gold_manual.json (đủ 4 ảnh gold) sau khi export COCO 1.0", c: "python scripts/validate_labels.py submission/labels/gold_manual.json --expect gold" }
+        ],
+        outputs: [
+          "`submission/labels/gold_manual.json` (4 ảnh, ví dụ 62 đối tượng)",
+          "Dòng `gold_manual` trong `submission/time_log.csv`"
+        ],
+        understand: "Tại sao **tuyệt đối không** xem pre-label hay chạy AI trước khi khóa `gold_manual.json`? Nếu gold bị nhiễm dự đoán của model, mọi số đo threshold sweep và recall đều tự lừa chính mình.",
+        notes: [
+          "**Không dùng AI trong Pha 1:** Chưa chạy `prelabel.py` và chưa bật Interactor SAM trước khi chốt xong 4 ảnh gold."
+        ],
+        rubric: "Mục 1 · Gold gán tay & quy trình sạch (10đ): đủ 4 ảnh theo v1.0, không nhiễm pre-label, ghi thời gian thật.",
+        subToc: [
+          ["deep-cp1-ban-chat", "Bản chất: khóa tập gold trước AI"],
+          ["deep-cp1-giai-nghia", "Giải nghĩa quy tắc 8 lớp & ignore_region"],
+          ["deep-cp1-cac-buoc", "Các bước thực hiện Pha 1"]
+        ]
+      },
+      {
+        id: "cp2", cp: "CP2", pha: "Pha 2", name: "Tour 3 model: YOLO26 · YOLOE · SAM",
+        start: 25, dur: 30, mode: "ai", color: "#7c3aed",
+        goals: [
+          "Chạy đủ 4 thử nghiệm trên tập pilot/2 ảnh (`YOLO26 conf 0.25`, `YOLO26 conf 0.5`, `YOLOE three_wheeler`, `YOLO26+SAM`)",
+          "Điền đầy đủ `submission/model_log.csv` (tối thiểu 4 dòng, 3 model khác nhau, 1 dòng có `sam`) và không bỏ trống `what_went_wrong`",
+          "Nêu được ít nhất một lỗi không sửa được bằng đổi `--conf`"
+        ],
+        tasks: [
+          "Chạy `prelabel.py` bản YOLO26m ở `conf 0.25` và `conf 0.5` trên `--split pilot`",
+          "Chạy `prelabel.py` bản YOLOE-26s với `--classes three_wheeler` trên `--split pilot`",
+          "Chạy `prelabel.py --segmenter sam --sam sam2.1_b.pt` trên `img_004.jpg img_013.jpg` (nhớ bọc ngoặc kép `--classes \"person,motorbike,car\"`)",
+          "Mở ảnh trong `work/prelabel/*/viz/` đối chiếu lỗi sai lớp tuk-tuk, sót nền xa và độ bám viền SAM",
+          "Chép số liệu từ `work/runs.csv` vào `submission/model_log.csv` kèm nhận xét ở 3 cột cuối"
+        ],
+        cmds: [
+          { m: "Tour 3 model (lưu ý ngoặc kép cho --classes trên PowerShell)", c: "python scripts/prelabel.py --model yolo26 --size m --split pilot --conf 0.25 --out work/prelabel/t_y26\npython scripts/prelabel.py --model yolo26 --size m --split pilot --conf 0.5 --out work/prelabel/t_y26_c05\npython scripts/prelabel.py --model yoloe --classes three_wheeler --split pilot --conf 0.25 --out work/prelabel/t_yoloe\npython scripts/prelabel.py --model yolo26 --size m --classes \"person,motorbike,car\" --images img_004.jpg img_013.jpg --conf 0.3 --segmenter sam --sam sam2.1_b.pt --out work/prelabel/t_sam" }
+        ],
+        outputs: [
+          "4 thư mục `work/prelabel/t_*` kèm ảnh trực quan trong `viz/`",
+          "`submission/model_log.csv` đầy đủ thông số + nhận xét lỗi"
+        ],
+        understand: "Detector đóng (YOLO26) thiếu lớp `three_wheeler` nên gọi tuk-tuk là `car/truck`; đổi `--conf` chỉ cân bằng precision/recall chứ không tạo ra lớp mới — cần kết hợp open-vocab (YOLOE).",
+        notes: [
+          "Nếu máy thiếu RAM/CPU chậm, dùng `notebooks/day08_colab.ipynb` trên Google Colab GPU T4 rồi tải thư mục `work/prelabel/` về máy."
+        ],
+        rubric: "Mục 2 · So sánh model & log thực nghiệm (15đ): đối chiếu 3 họ model, ghi đúng `what_went_wrong`.",
+        subToc: [
+          ["deep-cp2-ban-chat", "Bản chất 3 họ model pre-label"],
+          ["deep-cp2-giai-nghia", "Tác động ngưỡng & ngoặc kép PowerShell"],
+          ["deep-cp2-cac-buoc", "Các bước thực hiện Pha 2"]
+        ]
+      },
+      {
+        id: "cp3", cp: "CP3", pha: "Pha 3", name: "Quét ngưỡng theo lớp trên gold",
+        start: 55, dur: 10, mode: "ai", color: "#d97706",
+        goals: [
+          "Cache toàn bộ ứng viên 36 ảnh ở `--conf 0.05` (`y26_all` và `yoloe_all`)",
+          "Chạy `threshold_sweep.py` tạo đủ `.csv`, `.md`, `.png` trong `submission/qc/`",
+          "Lấy được chuỗi `--thr \"...\"` đạt recall ≥ 90% và hiểu giới hạn mẫu nhỏ/in-sample"
+        ],
+        tasks: [
+          "Chạy `prelabel.py --model yolo26 --size m --split all --conf 0.05 --out work/prelabel/y26_all --no-viz`",
+          "Chạy `prelabel.py --model yoloe --classes three_wheeler --split all --conf 0.05 --out work/prelabel/yoloe_all --no-viz`",
+          "Chạy `threshold_sweep.py --pred work/prelabel/y26_all/pre.coco.json work/prelabel/yoloe_all/pre.coco.json --gold submission/labels/gold_manual.json`",
+          "Kiểm tra `submission/qc/threshold_sweep.md` và `threshold_sweep.png`, ghi lại chuỗi `--thr \"...\"`"
+        ],
+        cmds: [
+          { m: "Chạy inference nền conf 0.05 và quét ngưỡng trên gold", c: "python scripts/prelabel.py --model yolo26 --size m --split all --conf 0.05 --out work/prelabel/y26_all --no-viz\npython scripts/prelabel.py --model yoloe --classes three_wheeler --split all --conf 0.05 --out work/prelabel/yoloe_all --no-viz\npython scripts/threshold_sweep.py --pred work/prelabel/y26_all/pre.coco.json work/prelabel/yoloe_all/pre.coco.json --gold submission/labels/gold_manual.json" }
+        ],
+        outputs: [
+          "`work/prelabel/y26_all/` và `work/prelabel/yoloe_all/`",
+          "`submission/qc/threshold_sweep.csv`, `.md`, `.png`"
+        ],
+        understand: "Chỉ số ở `threshold_sweep.md` là **in-sample** (tìm và chấm trên cùng 4 ảnh gold) và lớp có `< 5` mẫu giữ mặc định `0.3` để tránh overfit.",
+        notes: [
+          "Lớp có `< 5` cá thể trên 4 ảnh gold (như `bicycle`, `bus`, `truck`, `three_wheeler`) không được script ép ngưỡng cao."
+        ],
+        rubric: "Mục 3 · Quét ngưỡng theo lớp (10đ): chọn ngưỡng hợp lý theo recall ≥ 90% và nhận diện giới hạn mẫu nhỏ.",
+        subToc: [
+          ["deep-cp3-ban-chat", "Vì sao cần ngưỡng riêng từng lớp?"],
+          ["deep-cp3-giai-nghia", "Mục tiêu 90% recall & cảnh báo mẫu nhỏ"],
+          ["deep-cp3-cac-buoc", "Các bước thực hiện Pha 3"]
+        ]
+      },
+      {
+        id: "break", cp: "☕", pha: "Nghỉ", name: "Nghỉ giải lao",
+        start: 65, dur: 10, mode: "break", color: "#9a948a",
+        goals: [
+          "Rời màn hình 10 phút trước phiên review tập trung 95 phút ở Pha 4",
+          "Chuẩn bị sẵn chuỗi `--thr \"...\"` và MSHV chính xác (kèm số `0` đầu nếu có)"
+        ],
+        tasks: [
+          "Nghỉ mắt khỏi màn hình, chuẩn bị checklist 4 bước review",
+          "Xác nhận chuỗi MSHV chuẩn sẽ dùng đồng bộ giữa `--student \"...\"` và dòng đầu `README.md`"
+        ],
+        cmds: [],
+        outputs: ["Sẵn sàng cho chặng 95 phút Pha 4"],
+        understand: "Tỉnh táo mắt là điều kiện tiên quyết để không bị lừa bởi 12 bẫy trong Pha 4.",
+        notes: ["Đừng quên bọc ngoặc kép quanh `--student` trên PowerShell nếu MSHV bắt đầu bằng số `0`."],
+        rubric: "",
+        subToc: []
+      },
+      {
+        id: "cp4", cp: "CP4", pha: "Pha 4", name: "Pre-label, 12 bẫy & Review CVAT",
+        start: 75, dur: 95, mode: "review", color: "#dc2626",
+        goals: [
+          "Gộp thành công pre-label và sinh 12 bẫy bằng đúng MSHV qua `inject_traps.py`",
+          "Upload sạch `pre_traps_import.coco.json` vào Task `batch-review` (bấm xác nhận **Replace annotations**)",
+          "Duyệt hết 24 ảnh theo checklist 4 bước, export `batch_reviewed.json`, đạt `validate_labels --all` OK và bắt bẫy ≥ **80%**"
+        ],
+        tasks: [
+          "Chạy `merge_prelabels.py` đặt `yoloe_all` trước `y26_all` với `--thr \"person=0.35,motorbike=0.5,car=0.35\" --out work/prelabel/merged_review/pre.coco.json`",
+          "Chạy `inject_traps.py --pre work/prelabel/merged_review/pre.coco.json --student \"<MSHV>\"`",
+          "Tạo Task `batch-review` (24 ảnh `work/tasks/review/`), Upload **COCO 1.0** chọn `pre_traps_import.coco.json` → **OK** → **Replace annotations**",
+          "Duyệt đủ 24 ảnh theo checklist 4 bước, dùng nút **Filters** & tick `can_review` cho ca biên, ghi giờ vào `time_log.csv` (`batch_review`)",
+          "Export **COCO 1.0** → lưu `submission/labels/batch_reviewed.json` → chạy `validate_labels.py --all` và `review_stats.py --pre ... --final ... --gold ... --key ...`"
+        ],
+        cmds: [
+          { m: "Gộp pre-label và tiêm 12 ảnh bẫy theo MSHV (bọc ngoặc kép!)", c: "python scripts/merge_prelabels.py work/prelabel/yoloe_all/pre.coco.json work/prelabel/y26_all/pre.coco.json --thr \"person=0.35,motorbike=0.5,car=0.35\" --conf 0.3 --iou 0.6 --split \"batch,gold\" --out work/prelabel/merged_review/pre.coco.json\npython scripts/inject_traps.py --pre work/prelabel/merged_review/pre.coco.json --student \"00123456\"" },
+          { m: "Kiểm nhãn toàn bộ & xuất thống kê bắt bẫy sau khi export từ CVAT", c: "python scripts/validate_labels.py --all\npython scripts/review_stats.py --pre submission/prelabel/pre_traps.coco.json --final submission/labels/batch_reviewed.json --gold submission/labels/gold_manual.json --key submission/prelabel/traps_key.json" }
+        ],
+        outputs: [
+          "`work/prelabel/merged_review/pre.coco.json` và `submission/prelabel/{pre_traps_import,pre_traps}.coco.json` + `traps_key.json`",
+          "`submission/labels/batch_reviewed.json`",
+          "`submission/qc/review_stats.md` và `.json` (bắt bẫy ≥ 80%)"
+        ],
+        understand: "Nếu chỉ sửa bẫy lọt mắt mà chấp nhận 100% box máy còn lại, bạn đang mắc **automation bias**. Hãy đọc cả tỉ lệ bắt bẫy, `accepted/edited/deleted/added` lẫn đối chiếu gold.",
+        notes: [
+          "**Bẫy CVAT 2.74.1:** Nạp file `pre_traps_import.coco.json` (không dùng `pre_traps.coco.json`). Sau khi bấm **OK**, phải bấm tiếp **Replace annotations** ở hộp thoại xác nhận!"
+        ],
+        rubric: "Mục 4 · Review, bắt bẫy & phân tích sai số (25đ): bắt ≥ 80% bẫy, đọc đúng mẫu số `accepted/edited/deleted/added`.",
+        subToc: [
+          ["deep-cp4-ban-chat", "Bản chất 12 bẫy chống automation bias"],
+          ["deep-cp4-giai-nghia", "pre_traps vs pre_traps_import & MSHV số 0 đầu"],
+          ["deep-cp4-cac-buoc", "Các bước thực hiện Pha 4"]
+        ]
+      },
+      {
+        id: "cp5", cp: "CP5", pha: "Pha 5", name: "Mask SAM cho 3 vật khó",
+        start: 170, dur: 15, mode: "ai", color: "#0f8a7e",
+        goals: [
+          "Xuất ít nhất 3 ảnh mask chất lượng cao trong `submission/masks/` cho các xe/vật khó tách",
+          "Áp dụng đúng click dương (`--pos`) trên xe và click âm (`--neg`) tách người lái theo guideline mục 4.2",
+          "Đối chiếu được tối thiểu 2 phiên bản SAM (`sam2.1_b.pt` vs `mobile_sam.pt`) vào mục 5 của `REPORT.md`"
+        ],
+        tasks: [
+          "Chọn 3 ảnh có `three_wheeler` hoặc vật phức tạp (ví dụ `img_013.jpg`, `img_004.jpg`, `img_017.jpg`)",
+          "Chạy `sam2_points.py` với `--sam sam2.1_b.pt` và thử thêm `--sam mobile_sam.pt` trên `img_013.jpg`",
+          "Kiểm ảnh xuất trong `submission/masks/`: dấu xanh đặt đúng xe, dấu đỏ tách người lái khỏi vùng mask (thêm `--neg` nếu còn dính)",
+          "Cập nhật bảng so sánh mục 5 của `REPORT.md` và dòng chạy SAM trong `submission/model_log.csv`"
+        ],
+        cmds: [
+          { m: "Chạy sam2_points.py tách mask (lặp cờ --pos/--neg bọc ngoặc kép, truyền thư mục --out và --name)", c: "python scripts/sam2_points.py --image img_013.jpg --pos \"400,480\" --pos \"600,110\" --neg \"720,300\" --sam sam2.1_b.pt --out submission/masks --name tuktuk_img013_sam2\npython scripts/sam2_points.py --image img_013.jpg --pos \"400,480\" --pos \"600,110\" --neg \"720,300\" --sam mobile_sam.pt --out submission/masks --name tuktuk_img013_sam1\npython scripts/sam2_points.py --image img_004.jpg --pos \"620,480\" --pos \"700,560\" --neg \"465,450\" --sam sam2.1_b.pt --out submission/masks --name tuktuk_img004_sam2\npython scripts/sam2_points.py --image img_017.jpg --pos \"560,420\" --pos \"680,500\" --neg \"645,355\" --sam sam2.1_b.pt --out submission/masks --name tuktuk_img017_sam2" }
+        ],
+        outputs: [
+          "Tối thiểu 3 ảnh `.jpg` trong `submission/masks/`",
+          "Bảng đối chiếu SAM ở mục 5 của `submission/REPORT.md`"
+        ],
+        understand: "SAM mạnh ở cắt biên pixel cho vật rỗng khung hoặc chen lấn, nhưng vẫn lệ thuộc hoàn toàn vào vị trí click dương/âm do người xác lập theo guideline.",
+        notes: [
+          "Truyền `--image <ten_anh>` (không kèm `data/images/`), lặp từng cờ `--pos \"x,y\"` bọc ngoặc kép cho PowerShell và dùng `--out submission/masks --name <ten_file>`."
+        ],
+        rubric: "Mục 5 · Phân đoạn bằng SAM (10đ): đủ 3 mask đúng guideline 4.2 + so sánh định tính phiên bản SAM.",
+        subToc: [
+          ["deep-cp5-ban-chat", "Bản chất segmentation điểm dương/âm"],
+          ["deep-cp5-giai-nghia", "Quy chuẩn tách người lái mục 4.2"],
+          ["deep-cp5-cac-buoc", "Các bước thực hiện Pha 5"]
+        ]
+      },
+      {
+        id: "cp6", cp: "CP6", pha: "Pha 6", name: "Calibration, QC & Báo cáo",
+        start: 185, dur: 45, mode: "review", color: "#0b4f6c",
+        goals: [
+          "Chạy `build_release.py` + `qc_sample.py --n 5 --seed 42`, kiểm hết ảnh `work/qc/review/` và chạy `qc_report.py`",
+          "Điền tối thiểu 3 quyết định (`loi_may`, `cau_hoi_mo`, `can_review`/`bay_lot`) vào `calibration_decisions.csv` và đồng bộ sang `guideline_v1.1_calibrated.md`",
+          "Hoàn thiện đủ 8 mục `submission/REPORT.md` và `STUDENT.md` với quyết định **Release / Hold / Rework** hợp logic"
+        ],
+        tasks: [
+          "Chạy `python scripts/build_release.py` rồi `python scripts/qc_sample.py --n 5 --seed 42`",
+          "Mở toàn bộ ảnh có ID đối tượng trong `work/qc/review/`, điền trung thực từng lỗi quan sát được vào `submission/qc/qc_review.csv`",
+          "Chạy `python scripts/qc_report.py` đọc `qc_report_auto.md` (chú ý cận trên Wilson 95% và ngưỡng 2%)",
+          "Hoàn thiện `calibration_decisions.csv` (≥ 3 dòng), `guideline_v1.1_calibrated.md` (kèm `img_0xx` ví dụ)",
+          "Viết trọn vẹn 8 mục `submission/REPORT.md` và điền tóm tắt vào `STUDENT.md` (không còn `<<`)"
+        ],
+        cmds: [
+          { m: "Sinh bản release candidate, rút mẫu QC và lập báo cáo tự động", c: "python scripts/build_release.py\npython scripts/qc_sample.py --n 5 --seed 42\npython scripts/qc_report.py" }
+        ],
+        outputs: [
+          "`submission/release/{final_det.coco.json, release_manifest.json, release_summary.csv}`",
+          "`submission/qc/{qc_sample.csv, qc_review.csv, qc_report_auto.md, calibration_decisions.csv}`",
+          "`submission/guidelines/guideline_v1.1_calibrated.md`, `submission/REPORT.md`, `STUDENT.md`"
+        ],
+        understand: "Theo cây **Hold → Rework → Release**: đừng gượng ép Release khi mẫu QC vượt ngưỡng 2%; chỉ rõ bằng chứng và lộ trình sửa (Rework) mới là năng lực kỹ sư dữ liệu.",
+        notes: [
+          "Mọi số đo trong `REPORT.md` và `STUDENT.md` bắt buộc kèm **mẫu số** (ví dụ `4/7 = 57.1% theo ảnh`, `4/123 = 3.3% theo đối tượng`)."
+        ],
+        rubric: "Mục 6 · Calibration & QC cuối lô (20đ): guideline v1.1 giải quyết được lỗi thật, lập luận Release/Hold/Rework chặt chẽ.",
+        subToc: [
+          ["deep-cp6-ban-chat", "Vì sao cần QC sau duyệt CVAT?"],
+          ["deep-cp6-giai-nghia", "Cây Hold → Rework → Release & Wilson 95%"],
+          ["deep-cp6-cac-buoc", "Các bước thực hiện Pha 6"]
+        ]
+      },
+      {
+        id: "submit", cp: "Nộp", pha: "Nộp bài", name: "Kiểm lỗi cuối & Bàn giao",
+        start: 230, dur: 10, mode: "setup", color: "#15803d",
+        goals: [
+          "Cập nhật dòng đầu `README.md` thành `# Day 08 Lab — <MSHV> - <Họ và tên>` khớp `traps_key.json`",
+          "`python scripts/check_submission.py` trả về **`0 lỗi, 0 cảnh báo. Sạch lỗi: có thể nộp.`**",
+          "Đẩy đủ commit lên repo public `K5-L23-DAY08-[MSHV]-[HoTen]-AIPrelabel` và nộp link LMS (không kèm weights/secrets)"
+        ],
+        tasks: [
+          "Đổi dòng 1 `README.md` thành `# Day 08 Lab — <MSHV> - <Họ và tên>` và cập nhật commit hash vào `STUDENT.md`",
+          "Chạy `python scripts/check_submission.py` từ thư mục gốc tới khi báo `0 lỗi, 0 cảnh báo`",
+          "Kiểm `git status` để chắc chắn không có trọng số `.pt/.onnx/.ts`, token hay email cá nhân",
+          "Commit + push lên repo public của bạn và nộp link lên LMS (`https://aithucchien.vinuni.edu.vn`)"
+        ],
+        cmds: [
+          { m: "Kiểm định tự động toàn bộ bài nộp và rà git status trước khi push", c: "python scripts/check_submission.py\ngit status" }
+        ],
+        outputs: [
+          "Kết quả terminal `0 lỗi, 0 cảnh báo. Sạch lỗi: có thể nộp.`",
+          "Link repo public trên GitHub nộp qua LMS"
+        ],
+        understand: "`check_submission.py` kiểm tra nhất quán giữa MSHV trên Git/README/traps_key, schema mọi JSON/CSV, và chặn commit nhầm model nặng lên GitHub.",
+        notes: [
+          "Nếu cần nộp bản sao lưu LMS dạng thư mục `K5-DAY08-HoVaTen-MSSV/`, tuyệt đối vẫn phải đẩy đủ commit lên repo `K5-L23-DAY08-[MSHV]-[HoTen]-AIPrelabel`."
+        ],
+        rubric: "Mục 7–8 · Chuẩn hóa gói nộp & hoàn thiện báo cáo (10đ).",
+        subToc: []
+      }
+    ];
+    const MODES = {
+      setup: { t: "🔧 Chuẩn bị / Nộp bài", c: "setup" },
+      manual: { t: "✋ Cá nhân · Không AI", c: "indep" },
+      ai: { t: "🤖 Cá nhân · Chạy model AI", c: "ai" },
+      review: { t: "🔍 Cá nhân · CVAT Review/QC", c: "review" },
+      break: { t: "☕ Nghỉ giải lao", c: "break" }
+    };
+
+    const $ = s => document.querySelector(s);
+    const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    function mdInline(s) {
+      return esc(s)
+        .replace(/`([^`]+)`/g, "<code>$1</code>")
+        .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+        .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+    }
+    const pad = n => String(n).padStart(2, "0");
+    function fmtHMS(ms) { ms = Math.max(0, ms); const t = Math.floor(ms / 1000); const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60; return `${h}:${pad(m)}:${pad(s)}`; }
+    function fmtMS(ms) { const neg = ms < 0; ms = Math.abs(ms); const t = Math.ceil(ms / 1000 - (neg ? 1 : 0)); const m = Math.floor(t / 60), s = t % 60; return (neg ? "+" : "") + pad(m) + ":" + pad(s); }
+    const fmtMin = m => Math.floor(m / 60) + ":" + pad(m % 60);
+    const clock = d => pad(d.getHours()) + ":" + pad(d.getMinutes());
+
+    const KEY = "day08-lab-vlearn-v1";
+    let S = { acc: 0, since: null, sound: true, follow: true, sel: 1, viewAll: false, theme: "light", checks: {} };
+    try { const raw = localStorage.getItem(KEY); if (raw) S = Object.assign(S, JSON.parse(raw)); } catch (e) { }
+    function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { } }
+    const running = () => S.since !== null;
+    const elapsedMs = () => Math.max(0, S.acc + (running() ? Date.now() - S.since : 0));
+    function phaseIdx(min) {
+      for (let i = 0; i < PHASES.length; i++) {
+        if (PHASES[i].dur > 0 && min < PHASES[i].start + PHASES[i].dur) return i;
+      }
+      return PHASES.length - 1;
+    }
+
+    let lastIdx = phaseIdx(elapsedMs() / 60000);
+    const warned = {}; let endAlerted = elapsedMs() >= TOTAL * 60000;
+    PHASES.forEach((p, i) => { if (p.dur > 0) { const left = (p.start + p.dur) * 60000 - elapsedMs(); if (left <= 5 * 60000) warned[i] = true; } });
+
+    /* ---------- theme ---------- */
+    function applyTheme() {
+      document.documentElement.setAttribute("data-theme", S.theme === "dark" ? "dark" : "light");
+      const bt = $("#bTheme");
+      if (bt) bt.textContent = S.theme === "dark" ? "☀️ Sáng" : "🌙 Tối";
+    }
+    $("#bTheme").onclick = () => { S.theme = S.theme === "dark" ? "light" : "dark"; save(); applyTheme(); };
+
+    /* ---------- audio & toast ---------- */
+    let AC = null;
+    function ensureAudio() { try { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === "suspended") AC.resume(); } catch (e) { } }
+    function beep(pattern) {
+      if (!S.sound || !AC) return;
+      let t = AC.currentTime;
+      pattern.forEach(([f, d]) => {
+        const o = AC.createOscillator(), g = AC.createGain();
+        o.type = "sine"; o.frequency.value = f; o.connect(g); g.connect(AC.destination);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d / 1000);
+        o.start(t); o.stop(t + d / 1000 + 0.02); t += d / 1000 + 0.08;
+      });
+    }
+    let toastT = null;
+    function toast(msg, kind = "", ms = 9000) {
+      const el = $("#toast"); $("#toastMsg").innerHTML = msg; el.className = "toast show " + kind;
+      clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), ms);
+    }
+    $("#toastX").onclick = () => $("#toast").classList.remove("show");
+
+    /* ---------- copy & code-tabs & lightbox ---------- */
+    function copyRawText(txt, btn) {
+      const done = () => { const orig = btn.textContent; btn.textContent = "✓ Đã copy"; setTimeout(() => btn.textContent = orig, 1400); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopy(txt, done));
+      } else { fallbackCopy(txt, done); }
+    }
+    function fallbackCopy(txt, cb) {
+      const ta = document.createElement("textarea"); ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); cb(); } finally { ta.remove(); }
+    }
+    function copyPre(btn) {
+      const pre = btn.closest(".cmd").querySelector("pre");
+      const clone = pre.cloneNode(true);
+      clone.querySelectorAll(".cm").forEach(n => n.remove());
+      copyRawText(clone.innerText.trim(), btn);
+    }
+    function switchTab(btn, idx) {
+      const wrap = btn.closest(".code-tabs");
+      wrap.querySelectorAll(".tab-btn").forEach((b, i) => b.classList.toggle("active", i === idx));
+      wrap.querySelectorAll(".tab-panel").forEach((p, i) => p.classList.toggle("active", i === idx));
+    }
+
+    let lbFigures = []; let lbIndex = 0;
+    function openLightbox(img) {
+      lbFigures = Array.from(document.querySelectorAll("#panelHost .lab-figure img"));
+      lbIndex = Math.max(0, lbFigures.indexOf(img));
+      showLightbox();
+    }
+    function showLightbox() {
+      const img = lbFigures[lbIndex]; if (!img) return;
+      $("#lbImg").src = img.src; $("#lbImg").alt = img.alt;
+      const cap = img.closest("figure").querySelector("figcaption");
+      $("#lbCap").textContent = cap ? cap.textContent : img.alt;
+      $("#lbIdx").textContent = `Ảnh ${lbIndex + 1} / ${lbFigures.length}`;
+      $("#lightbox").classList.add("open");
+    }
+    function closeLightbox() { $("#lightbox").classList.remove("open"); }
+    function stepLightbox(d) { lbIndex = (lbIndex + d + lbFigures.length) % lbFigures.length; showLightbox(); }
+
+    /* ---------- timeline & stepper ---------- */
+    function buildTimeline() {
+      const tr = $("#track"), tk = $("#ticks");
+      PHASES.forEach((p, i) => {
+        if (p.dur <= 0) return;
+        const d = document.createElement("div"); d.className = "seg"; d.dataset.i = i;
+        d.style.width = (p.dur / TOTAL * 100) + "%"; d.style.background = p.color;
+        d.innerHTML = `${p.cp}<small>${esc(p.name)}</small>`; d.title = `${p.pha} · ${p.name} (${p.dur}′)`;
+        d.onclick = () => select(i, true); tr.insertBefore(d, $("#needle"));
+        const t = document.createElement("div"); t.className = "tick"; t.style.left = ((p.start + p.dur) / TOTAL * 100) + "%";
+        if (p.id === "cp3" || p.id === "cp5") t.classList.add("tick-stagger");
+        if (p.id === "cp6") t.classList.add("tick-stagger", "tick-cp6");
+        t.innerHTML = `<b>${p.id === "break" ? "&nbsp;" : (p.id === "submit" ? "✓" : p.cp)}</b>${fmtMin(p.start + p.dur)}`;
+        if (i === PHASES.length - 2) t.style.transform = "translateX(-100%)";
+        if (i === PHASES.length - 1) t.style.transform = "translateX(-100%)";
+        tk.appendChild(t);
+      });
+    }
+    function buildStepper() {
+      const st = $("#stepper"); st.innerHTML = "";
+      PHASES.forEach((p, i) => {
+        const d = document.createElement("div"); d.className = "step"; d.dataset.i = i;
+        const tmStr = p.dur > 0 ? `${p.pha} · ${fmtMin(p.start)} → ${fmtMin(p.start + p.dur)} · ${p.dur}′` : `${p.pha} · ${p.prepLabel}`;
+        d.innerHTML = `<div class="dot" style="background:${p.color}">${p.cp}</div>
+      <div><div class="nm">${esc(p.name)}</div><div class="tm">${tmStr}</div></div>
+      <div class="cnt" id="cnt${i}"></div>`;
+        d.onclick = () => {
+          if (S.viewAll) {
+            const target = document.getElementById("panel-" + p.id);
+            if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+            S.sel = i; paintSel();
+          } else { select(i, true); }
+        };
+        st.appendChild(d);
+      });
+      const b = document.createElement("button"); b.className = "btn follow"; b.id = "bFollow";
+      b.onclick = () => { S.follow = true; if (S.viewAll) { S.viewAll = false; refreshViewBtn(); } select(lastIdx, false); save(); refreshFollow(); };
+      st.appendChild(b);
+
+      const toc = document.createElement("div"); toc.className = "toc-box"; toc.id = "sidebarToc";
+      st.appendChild(toc);
+      refreshFollow(); refreshCounts(); renderSidebarToc();
+    }
+    function renderSidebarToc() {
+      const toc = $("#sidebarToc"); if (!toc) return;
+      if (S.viewAll) {
+        toc.innerHTML = `<div class="toc-title">Mục lục toàn bài</div>` +
+          PHASES.map(p => `<a class="toc-link" href="#panel-${p.id}">${p.cp} · ${esc(p.name)}</a>`).join("") +
+          `<a class="toc-link" href="#refSection">📏 Ngưỡng &amp; Quy tắc vàng</a>`;
+      } else {
+        const p = PHASES[S.sel];
+        const sub = (p.subToc || []).map(x => `<a class="toc-link sub" href="#${x[0]}">${esc(x[1])}</a>`).join("");
+        toc.innerHTML = `<div class="toc-title">Mục lục ${p.cp}</div>
+      <a class="toc-link" href="#${p.id}-goals">🎯 Mục tiêu cần đạt</a>
+      <a class="toc-link" href="#${p.id}-tasks">✅ Việc cần làm</a>
+      ${p.cmds.length ? `<a class="toc-link" href="#${p.id}-cmds">⌨️ Lệnh chạy nhanh</a>` : ""}
+      <a class="toc-link" href="#${p.id}-deep">🖼️ Chi tiết &amp; Ảnh mẫu</a>
+      ${sub}
+      <a class="toc-link" href="#refSection">📏 Ngưỡng &amp; Quy tắc</a>`;
+      }
+    }
+    function refreshFollow() { const b = $("#bFollow"); if (!b) return; b.textContent = S.follow ? "✓ Đang tự theo pha hiện tại" : "↻ Theo pha hiện tại"; b.classList.toggle("on", S.follow); }
+    function refreshCounts() {
+      PHASES.forEach((p, i) => {
+        const c = S.checks[p.id] || {}; const n = p.tasks.filter((_, k) => c["t" + k]).length; const g = p.goals.filter((_, k) => c["g" + k]).length;
+        const el = $("#cnt" + i); if (el) el.textContent = `${n + g}/${p.tasks.length + p.goals.length}`;
+      });
+    }
+    function refreshViewBtn() {
+      const b = $("#bViewAll");
+      if (b) { b.textContent = S.viewAll ? "⏱ Xem theo pha" : "📖 Xem tất cả"; b.classList.toggle("on", S.viewAll); }
+    }
+
+    /* ---------- panels ---------- */
+    function stashAllDeepBlocks() {
+      const arch = $("#deepArchive");
+      document.querySelectorAll(".deep-panel").forEach(el => arch.appendChild(el));
+    }
+    function chkListHtml(p, arr, prefix, numbered) {
+      const c = S.checks[p.id] || {};
+      return `<ul class="chk">${arr.map((t, k) => {
+        const on = !!c[prefix + k];
+        return `<li class="${on ? "checked" : ""}"><input type="checkbox" data-p="${p.id}" data-k="${prefix + k}" ${on ? "checked" : ""}><span>${numbered ? `<span class="num">${k + 1}.</span>` : ""}${mdInline(t)}</span></li>`;
+      }).join("")}</ul>`;
+    }
+    function buildPhaseCard(p, startWall) {
+      const m = MODES[p.mode];
+      const at = min => clock(new Date(startWall.getTime() + min * 60000));
+      const card = document.createElement("section");
+      card.className = "panel"; card.id = "panel-" + p.id; card.style.setProperty("--pc", p.color);
+      const metaTime = p.dur > 0
+        ? `<span>⏱ <b>${fmtMin(p.start)} → ${fmtMin(p.start + p.dur)}</b> · ${p.dur} phút</span><span class="wall-clock-wrap">🕘 Giờ dự kiến: <b class="wall-clock" data-s="${p.start}" data-e="${p.start + p.dur}">${at(p.start)} → ${at(p.start + p.dur)}</b></span>`
+        : `<span>⏱ <b>${esc(p.prepLabel)}</b> (làm trước buổi thực hành)</span>`;
+      card.innerHTML = `
+    <div class="p-head">
+      <span class="cpb" style="background:${p.color};font-size:14px;padding:4px 12px">${p.cp}</span>
+      <h2>${p.pha} · ${esc(p.name)}</h2>
+      <div class="p-actions hide-present">
+        ${p.dur > 0 ? `<button type="button" class="btn" data-jump="${p.start}" data-pname="${esc(p.pha + ' · ' + p.name)}" title="Đặt đồng hồ về đầu pha này">⤒ Nhảy tới đầu pha</button>` : ""}
+      </div>
+    </div>
+    <div class="p-meta">
+      <span class="mode ${m.c}">${m.t}</span>
+      ${metaTime}
+    </div>
+    <div class="goalbox" id="${p.id}-goals">
+      <h3>🎯 Mục tiêu cần đạt ${p.id === "break" ? "trước Pha 4" : "tại " + p.cp + " (tự kiểm tra)"}</h3>
+      ${chkListHtml(p, p.goals, "g", false)}
+    </div>
+    <div class="cols">
+      <div>
+        <div class="sec" id="${p.id}-tasks"><h3>✅ Việc cần làm</h3>${chkListHtml(p, p.tasks, "t", true)}</div>
+      </div>
+      <div>
+        ${p.outputs.length ? `<div class="sec"><h3>📦 Sản phẩm cần có</h3><ul class="plain">${p.outputs.map(o => `<li>${mdInline(o)}</li>`).join("")}</ul></div>` : ""}
+        <div class="sec"><div class="q"><b class="qtitle">💡 Cần hiểu ở mốc này</b>${mdInline(p.understand)}</div></div>
+        ${p.notes.length ? `<div class="sec">${p.notes.map(n => `<div class="note">${mdInline(n)}</div>`).join("")}</div>` : ""}
+        ${p.cmds.length ? `<div class="sec hide-present" id="${p.id}-cmds"><h3>⌨️ Lệnh chính (từ thư mục gốc repo)</h3>${p.cmds.map(c => `<div class="cmd"><pre>${c.m ? `<span class="cm"># ${esc(c.m)}\n</span>` : ""}${esc(c.c)}</pre><button type="button" onclick="copyPre(this)">Copy</button></div>`).join("")}</div>` : ""}
+        ${p.rubric ? `<div class="sec hide-present"><h3>🏁 Rubric liên quan</h3><div class="rub">${mdInline(p.rubric)}</div></div>` : ""}
+      </div>
+    </div>
+    <div class="deep-wrap" id="${p.id}-deep">
+      <div class="deep-banner">
+        <h3>🖼️ Hướng dẫn chi tiết, ảnh chụp CVAT/Model thực tế &amp; hướng dẫn theo hệ điều hành</h3>
+        <button type="button" class="btn hide-present" onclick="toggleDeep(this)">Thu gọn / Mở chi tiết</button>
+      </div>
+      <div class="deep-slot"></div>
+    </div>`;
+      const deepEl = $(`.deep-panel[data-deep-id="${p.id}"]`);
+      if (deepEl) card.querySelector(".deep-slot").appendChild(deepEl);
+      return card;
+    }
+    function toggleDeep(btn) {
+      const slot = btn.closest(".deep-wrap").querySelector(".deep-slot");
+      slot.hidden = !slot.hidden;
+    }
+    function wrapNoSplit(root) {
+      if (!root) return;
+      const tokRe = /(?:--[A-Za-z0-9][A-Za-z0-9_-]*|[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)+\.[A-Za-z0-9]{1,8}|pre_traps(?:_import)?\.coco\.json)/g;
+      root.querySelectorAll("code, .cmd pre").forEach(el => {
+        if (el.dataset.nwDone) return;
+        el.dataset.nwDone = "1";
+        const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+        const nodes = [];
+        let n;
+        while ((n = w.nextNode())) {
+          if (n.parentElement && n.parentElement.closest(".cm,.nw")) continue;
+          if (tokRe.test(n.nodeValue)) nodes.push(n);
+          tokRe.lastIndex = 0;
+        }
+        nodes.forEach(tn => {
+          const txt = tn.nodeValue;
+          tokRe.lastIndex = 0;
+          const frag = document.createDocumentFragment();
+          let last = 0, m;
+          while ((m = tokRe.exec(txt)) !== null) {
+            if (m.index > last) frag.appendChild(document.createTextNode(txt.slice(last, m.index)));
+            if (m[0].length <= 26) {
+              const sp = document.createElement("span");
+              sp.className = "nw";
+              sp.textContent = m[0];
+              frag.appendChild(sp);
+            } else {
+              frag.appendChild(document.createTextNode(m[0]));
+            }
+            last = m.index + m[0].length;
+          }
+          if (last < txt.length) frag.appendChild(document.createTextNode(txt.slice(last)));
+          tn.parentNode.replaceChild(frag, tn);
+        });
+      });
+    }
+    function renderPanels() {
+      stashAllDeepBlocks();
+      const host = $("#panelHost"); host.innerHTML = "";
+      const startWall = new Date(Date.now() - elapsedMs());
+      const list = S.viewAll ? PHASES : [PHASES[S.sel]];
+      list.forEach(p => host.appendChild(buildPhaseCard(p, startWall)));
+
+      host.querySelectorAll("input[type=checkbox][data-p]").forEach(cb => cb.onchange = () => {
+        const id = cb.dataset.p; S.checks[id] = S.checks[id] || {}; S.checks[id][cb.dataset.k] = cb.checked;
+        cb.closest("li").classList.toggle("checked", cb.checked); save(); refreshCounts();
+      });
+      host.querySelectorAll("[data-jump]").forEach(b => b.onclick = () => {
+        setElapsed((+b.dataset.jump) * 60000); S.follow = true; save(); refreshFollow();
+        toast(`Đồng hồ đặt về đầu <b>${esc(b.dataset.pname)}</b>`, "", 3500);
+      });
+      wrapNoSplit(host);
+      renderSidebarToc();
+    }
+
+    function select(i, manual) {
+      S.sel = i;
+      if (manual && i !== lastIdx) S.follow = false;
+      if (manual && i === lastIdx) S.follow = true;
+      save(); renderPanels(); refreshFollow(); paintSel();
+    }
+    function paintSel() {
+      document.querySelectorAll(".step").forEach(el => el.classList.toggle("sel", +el.dataset.i === S.sel));
+      document.querySelectorAll(".seg").forEach(el => el.classList.toggle("sel", +el.dataset.i === S.sel));
+    }
+
+    /* ---------- timer & controls ---------- */
+    function setElapsed(ms) {
+      ms = Math.max(0, ms); S.acc = ms; if (running()) S.since = Date.now();
+      lastIdx = phaseIdx(ms / 60000);
+      PHASES.forEach((p, i) => { if (p.dur > 0) warned[i] = (p.start + p.dur) * 60000 - ms <= 5 * 60000; });
+      endAlerted = ms >= TOTAL * 60000;
+      if (S.follow) { S.sel = lastIdx; renderPanels(); paintSel(); }
+      refreshWallClocks();
+      save(); tick();
+    }
+    function toggle() {
+      ensureAudio();
+      if (running()) { S.acc = elapsedMs(); S.since = null; }
+      else {
+        S.since = Date.now();
+        if (elapsedMs() === 0) toast(`▶ Bắt đầu! <b>${PHASES[lastIdx].pha} · ${PHASES[lastIdx].name}</b>: ${PHASES[lastIdx].dur} phút`, "go", 4500);
+        beep([[660, 120]]);
+      }
+      save(); tick();
+    }
+    $("#bStart").onclick = toggle;
+    document.querySelectorAll("[data-adj]").forEach(b => b.onclick = () => setElapsed(elapsedMs() + (+b.dataset.adj) * 60000));
+    $("#bViewAll").onclick = () => { S.viewAll = !S.viewAll; save(); refreshViewBtn(); renderPanels(); };
+    let resetArm = null;
+    $("#bReset").onclick = () => {
+      const b = $("#bReset");
+      if (!resetArm) { b.textContent = "Bấm lần nữa để đặt lại"; resetArm = setTimeout(() => { b.textContent = "↺ Đặt lại"; resetArm = null; }, 3000); return; }
+      clearTimeout(resetArm); resetArm = null; b.textContent = "↺ Đặt lại";
+      S.since = null; S.checks = {}; S.follow = true; setElapsed(0); renderPanels(); refreshCounts(); refreshFollow();
+    };
+    $("#bSync").onclick = () => {
+      const v = $("#syncTime").value; if (!v) { toast("Chọn giờ lớp bắt đầu trước (ví dụ 08:00).", "warn", 4000); return; }
+      ensureAudio();
+      const [h, m] = v.split(":").map(Number); const d = new Date(); d.setHours(h, m, 0, 0);
+      const diff = Date.now() - d.getTime();
+      if (diff < 0) { toast("Giờ bắt đầu nằm ở tương lai. Kiểm tra lại giờ đã nhập.", "warn", 4500); return; }
+      S.since = Date.now(); S.follow = true; setElapsed(diff);
+      toast(`Đã đồng bộ: lớp bắt đầu lúc <b>${v}</b>, đã trôi ${fmtHMS(diff)}`, "go", 4500);
+    };
+    function refreshSound() { const b = $("#bSound"); b.textContent = S.sound ? "🔔 Âm báo" : "🔕 Tắt âm"; b.classList.toggle("on", !S.sound); }
+    $("#bSound").onclick = () => { S.sound = !S.sound; ensureAudio(); save(); refreshSound(); if (S.sound) beep([[880, 100]]); };
+    $("#bPresent").onclick = () => { document.body.classList.toggle("present"); $("#bPresent").classList.toggle("on"); };
+    $("#bFull").onclick = () => { try { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); } catch (e) { } };
+
+    document.addEventListener("keydown", e => {
+      if ($("#lightbox").classList.contains("open")) {
+        if (e.key === "Escape") closeLightbox();
+        if (e.key === "ArrowLeft") stepLightbox(-1);
+        if (e.key === "ArrowRight") stepLightbox(1);
+        return;
+      }
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.code === "Space") { e.preventDefault(); toggle(); }
+      else if (e.key === "ArrowRight") select(Math.min(PHASES.length - 1, S.sel + 1), true);
+      else if (e.key === "ArrowLeft") select(Math.max(0, S.sel - 1), true);
+      else if (e.key === "p" || e.key === "P") $("#bPresent").click();
+      else if (e.key === "f" || e.key === "F") $("#bFull").click();
+      else if (e.key === "t" || e.key === "T") $("#bTheme").click();
+    });
+
+    function tick() {
+      const ms = elapsedMs(), min = ms / 60000, i = phaseIdx(min), p = PHASES[i];
+      const endMs = (p.start + p.dur) * 60000, left = endMs - ms, over = ms >= TOTAL * 60000;
+
+      if (i !== lastIdx) {
+        if (running() && i > lastIdx) {
+          const prev = PHASES[lastIdx];
+          const chk = prev.id === "break" ? "" : ` Tự kiểm tra <b>${prev.cp}</b>.`;
+          toast(`⏰ Hết giờ <b>${prev.pha} · ${esc(prev.name)}</b>.${chk} Bắt đầu <b>${p.pha} · ${esc(p.name)}</b> (${p.dur}′)`, "go", 15000);
+          beep([[784, 180], [988, 180], [1175, 320]]);
+        }
+        lastIdx = i; if (S.follow) { S.sel = i; renderPanels(); paintSel(); } refreshFollow();
+      }
+      if (running() && !warned[i] && left <= 5 * 60000 && left > 0 && p.dur > 5) {
+        warned[i] = true; toast(`⚠️ Còn 5 phút cho <b>${p.pha} · ${esc(p.name)}</b>. Chuẩn bị chốt ${p.id === "break" ? "và quay lại lớp" : "bằng chứng cho " + p.cp}.`, "warn", 10000); beep([[660, 200], [660, 200]]);
+      }
+      if (running() && over && !endAlerted) {
+        endAlerted = true; toast("🏁 Hết 4 giờ! Chạy <code>python scripts/check_submission.py</code> và nộp theo <code>SUBMISSION.md</code>.", "warn", 20000);
+        beep([[523, 250], [659, 250], [784, 250], [1047, 500]]);
+      }
+
+      const now = $("#now"); now.style.setProperty("--pc", p.color);
+      now.classList.toggle("warn", !over && left <= 5 * 60000); now.classList.toggle("over", over);
+      $("#nowCp").textContent = p.cp; $("#nowCp").style.background = p.color;
+      $("#nowName").textContent = `${p.pha} · ${p.name}`;
+      const m = MODES[p.mode]; const nm = $("#nowMode"); nm.textContent = m.t; nm.className = "mode " + m.c;
+      $("#nowLeft").textContent = fmtMS(left);
+      $("#nowSub").innerHTML = over ? `<b>Quá giờ</b> so với kế hoạch 240 phút` :
+        (p.id === "break" ? `Còn lại của giờ nghỉ · Pha 4 bắt đầu lúc <b>${fmtMin(p.start + p.dur)}</b>` : `Còn lại tới mốc <b>${p.cp}</b> (phút ${fmtMin(p.start + p.dur)})`);
+      $("#nowBar").style.width = Math.min(100, (ms - p.start * 60000) / (p.dur * 60000) * 100) + "%";
+      const pill = $("#statePill"); pill.textContent = running() ? "● Đang chạy" : (ms > 0 ? "❚❚ Tạm dừng" : "Chưa bắt đầu"); pill.classList.toggle("run", running());
+      $("#bStart").textContent = running() ? "❚❚ Tạm dừng" : (ms > 0 ? "▶ Tiếp tục" : "▶ Bắt đầu");
+
+      $("#tElapsed").textContent = fmtHMS(ms);
+      $("#tLeft").textContent = fmtHMS(TOTAL * 60000 - ms);
+      const nowD = new Date(); $("#tClock").textContent = clock(nowD);
+      $("#tEnd").textContent = clock(new Date(nowD.getTime() + TOTAL * 60000 - ms));
+      const nxt = PHASES.slice(i).find(q => q.dur > 0 && q.id !== "break" && (q.start + q.dur) * 60000 > ms);
+      $("#tNext").innerHTML = over ? "🏁 Đã hết thời gian dự kiến. Kiểm tra bằng <code>check_submission.py</code> và nộp bài." :
+        (nxt ? `Mốc tiếp theo: <b>${nxt.cp} · ${esc(nxt.name)}</b> lúc phút ${fmtMin(nxt.start + nxt.dur)} (khoảng <b>${clock(new Date(nowD.getTime() + (nxt.start + nxt.dur) * 60000 - ms))}</b>), còn ${fmtHMS((nxt.start + nxt.dur) * 60000 - ms).replace(/^0:/, "")}` : "");
+
+      $("#needle").style.left = Math.min(100, ms / (TOTAL * 60000) * 100) + "%";
+      $("#tlPct").textContent = Math.min(100, Math.round(ms / (TOTAL * 60000) * 100)) + "%";
+      document.querySelectorAll(".seg").forEach(el => {
+        const k = +el.dataset.i;
+        el.classList.toggle("cur", k === i && !over);
+        el.classList.toggle("done", k < i || over);
+      });
+      document.querySelectorAll(".step").forEach(el => {
+        const k = +el.dataset.i;
+        if (PHASES[k].dur > 0) {
+          el.classList.toggle("cur", k === i && !over);
+          el.classList.toggle("done", k < i || over);
+        }
+      });
+    }
+
+    const IS_PRINT = new URLSearchParams(location.search).get("print") === "1";
+    if (IS_PRINT) {
+      S.theme = "light"; S.viewAll = true;
+      document.body.classList.add("print-mode");
+    }
+    applyTheme(); buildTimeline(); buildStepper(); refreshSound(); refreshViewBtn();
+    if (S.follow && !S.viewAll && !IS_PRINT) S.sel = lastIdx;
+    renderPanels(); wrapNoSplit(document.getElementById("refSection")); paintSel(); tick();
+
+    let _prePrintState = null;
+    window.addEventListener("beforeprint", () => {
+      _prePrintState = { viewAll: S.viewAll, theme: S.theme };
+      S.viewAll = true; S.theme = "light"; applyTheme(); renderPanels();
+    });
+    window.addEventListener("afterprint", () => {
+      if (_prePrintState && !IS_PRINT) {
+        S.viewAll = _prePrintState.viewAll; S.theme = _prePrintState.theme;
+        applyTheme(); refreshViewBtn(); renderPanels(); paintSel();
+      }
+      _prePrintState = null;
+    });
+
+    function refreshWallClocks() {
+      const startWall = new Date(Date.now() - elapsedMs());
+      const at = min => clock(new Date(startWall.getTime() + min * 60000));
+      document.querySelectorAll(".wall-clock").forEach(el => {
+        el.textContent = `${at(+el.dataset.s)} → ${at(+el.dataset.e)}`;
+      });
+    }
+    setInterval(tick, 250);
+    setInterval(refreshWallClocks, 15000);
+  </script>
+</body>
+
+</html>

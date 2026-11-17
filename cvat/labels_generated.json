@@ -1,0 +1,183 @@
+[
+  {
+    "name": "person",
+    "color": "#e6194b",
+    "type": "any",
+    "attributes": [
+      {
+        "name": "conf",
+        "mutable": false,
+        "input_type": "text",
+        "default_value": "",
+        "values": [
+          ""
+        ]
+      },
+      {
+        "name": "can_review",
+        "mutable": false,
+        "input_type": "checkbox",
+        "default_value": "false",
+        "values": [
+          "false"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "bicycle",
+    "color": "#3cb44b",
+    "type": "any",
+    "attributes": [
+      {
+        "name": "conf",
+        "mutable": false,
+        "input_type": "text",
+        "default_value": "",
+        "values": [
+          ""
+        ]
+      },
+      {
+        "name": "can_review",
+        "mutable": false,
+        "input_type": "checkbox",
+        "default_value": "false",
+        "values": [
+          "false"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "motorbike",
+    "color": "#4363d8",
+    "type": "any",
+    "attributes": [
+      {
+        "name": "conf",
+        "mutable": false,
+        "input_type": "text",
+        "default_value": "",
+        "values": [
+          ""
+        ]
+      },
+      {
+        "name": "can_review",
+        "mutable": false,
+        "input_type": "checkbox",
+        "default_value": "false",
+        "values": [
+          "false"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "car",
+    "color": "#f58231",
+    "type": "any",
+    "attributes": [
+      {
+        "name": "conf",
+        "mutable": false,
+        "input_type": "text",
+        "default_value": "",
+        "values": [
+          ""
+        ]
+      },
+      {
+        "name": "can_review",
+        "mutable": false,
+        "input_type": "checkbox",
+        "default_value": "false",
+        "values": [
+          "false"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "bus",
+    "color": "#911eb4",
+    "type": "any",
+    "attributes": [
+      {
+        "name": "conf",
+        "mutable": false,
+        "input_type": "text",
+        "default_value": "",
+        "values": [
+          ""
+        ]
+      },
+      {
+        "name": "can_review",
+        "mutable": false,
+        "input_type": "checkbox",
+        "default_value": "false",
+        "values": [
+          "false"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "truck",
+    "color": "#46c8c8",
+    "type": "any",
+    "attributes": [
+      {
+        "name": "conf",
+        "mutable": false,
+        "input_type": "text",
+        "default_value": "",
+        "values": [
+          ""
+        ]
+      },
+      {
+        "name": "can_review",
+        "mutable": false,
+        "input_type": "checkbox",
+        "default_value": "false",
+        "values": [
+          "false"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "three_wheeler",
+    "color": "#f032e6",
+    "type": "any",
+    "attributes": [
+      {
+        "name": "conf",
+        "mutable": false,
+        "input_type": "text",
+        "default_value": "",
+        "values": [
+          ""
+        ]
+      },
+      {
+        "name": "can_review",
+        "mutable": false,
+        "input_type": "checkbox",
+        "default_value": "false",
+        "values": [
+          "false"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "ignore_region",
+    "color": "#808080",
+    "type": "any",
+    "attributes": []
+  }
+]

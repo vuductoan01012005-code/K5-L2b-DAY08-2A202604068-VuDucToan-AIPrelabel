@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cài đặt Day 08 (CPU)</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+/* Concept: bảng điều khiển bên trái (cấu hình máy), hướng dẫn từng bước bên phải, giống một terminal có checklist.
+   Màu: slate nghiêng xanh, nhấn teal; trạng thái dùng màu ngữ nghĩa riêng. */
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --surface-2:#eef2f5; --line:#d9e0e6; --fg:#16202a; --muted:#5a6a78;
+  --accent:#0b7f78; --accent-fg:#ffffff; --accent-soft:#d9f0ee;
+  --code-bg:#0f1b24; --code-fg:#d6f2ee; --code-line:#223645;
+  --ok:#1f8a4c; --ok-soft:#dff3e6; --warn:#a15c00; --warn-soft:#fdeccb; --bad:#b42323; --bad-soft:#fbdcdc;
+  --font-body:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1318; --surface:#131d25; --surface-2:#1a2731; --line:#26373f; --fg:#e6edf2; --muted:#9bb0bd;
+  --accent:#3dc7bd; --accent-fg:#06201e; --accent-soft:#12413e;
+  --code-bg:#091016; --code-fg:#cdeee9; --code-line:#1d2f3b;
+  --ok:#52c982; --ok-soft:#143826; --warn:#f0b04a; --warn-soft:#3d2a0a; --bad:#ff8585; --bad-soft:#431a1a;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1318; --surface:#131d25; --surface-2:#1a2731; --line:#26373f; --fg:#e6edf2; --muted:#9bb0bd;
+  --accent:#3dc7bd; --accent-fg:#06201e; --accent-soft:#12413e;
+  --code-bg:#091016; --code-fg:#cdeee9; --code-line:#1d2f3b;
+  --ok:#52c982; --ok-soft:#143826; --warn:#f0b04a; --warn-soft:#3d2a0a; --bad:#ff8585; --bad-soft:#431a1a;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);line-height:1.55;
+  padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1{font-size:clamp(1.5rem,3.2vw,2.1rem);line-height:1.15;margin:0;text-wrap:balance;letter-spacing:-.01em}
+h2{font-size:1.05rem;margin:0;letter-spacing:.01em}
+h3{font-size:.98rem;margin:0}
+p{margin:0}
+.eyebrow{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.lede{color:var(--muted);max-width:64ch}
+header{display:flex;flex-direction:column;gap:8px;padding-top:4px}
+.grid{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:20px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.sticky{position:sticky;top:12px}
+@media (max-width:900px){.sticky{position:static}}
+.field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.label{font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;gap:10px;align-items:flex-start;text-align:left;width:100%;background:var(--surface-2);color:var(--fg);
+  border:1px solid transparent;border-radius:8px;padding:9px 11px;cursor:pointer;font:inherit}
+.opt:hover{border-color:var(--line)}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.opt:focus-visible,.btn:focus-visible,summary:focus-visible,.copy:focus-visible,.chk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dot{flex:none;width:16px;height:16px;border-radius:50%;border:2px solid var(--line);margin-top:3px;background:var(--surface)}
+.opt[aria-pressed="true"] .dot{border-color:var(--accent);background:radial-gradient(var(--accent) 0 42%,transparent 46%)}
+.opt b{display:block;font-weight:600;font-size:.92rem}
+.opt span.s{display:block;color:var(--muted);font-size:.8rem}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.seg .opt{align-items:center;justify-content:center;text-align:center}
+.btn{background:var(--accent);color:var(--accent-fg);border:0;border-radius:8px;padding:9px 13px;font:inherit;font-weight:600;cursor:pointer}
+.btn.ghost{background:var(--surface-2);color:var(--fg);border:1px solid var(--line)}
+.detect{background:var(--surface-2);border-radius:8px;padding:10px 12px;font-size:.84rem;display:flex;flex-direction:column;gap:6px}
+.detect .row{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--font-mono);font-size:.76rem;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px 9px;color:var(--muted)}
+
+.verdict{border-radius:10px;padding:16px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;align-items:start;border:1px solid var(--line);background:var(--surface)}
+.verdict .tag{grid-row:span 2;font-weight:700;font-size:.74rem;letter-spacing:.1em;text-transform:uppercase;padding:5px 9px;border-radius:6px;white-space:nowrap}
+.verdict.colab .tag{background:var(--warn-soft);color:var(--warn)}
+.verdict.local .tag{background:var(--ok-soft);color:var(--ok)}
+.verdict h2{font-size:1.1rem}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.fact{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.fact .k{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.fact .v{font-weight:600;font-size:.95rem;margin-top:2px;overflow-wrap:anywhere}
+.progress{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+.prow{display:flex;justify-content:space-between;gap:10px;font-size:.84rem;color:var(--muted);align-items:center;flex-wrap:wrap}
+
+.steps{display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0;overflow:hidden}
+.step.done{opacity:.72}
+.step-h{display:flex;gap:12px;align-items:flex-start;padding:14px 16px}
+.chk{flex:none;width:24px;height:24px;border-radius:6px;border:2px solid var(--line);background:var(--surface);cursor:pointer;display:grid;place-items:center;color:transparent;font-weight:700;font-size:.9rem;padding:0;margin-top:1px}
+.step.done .chk{background:var(--ok);border-color:var(--ok);color:#fff}
+.step-h .t{flex:1;min-width:0}
+.step-h .t h3{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+.badge{font-size:.72rem;font-weight:600;color:var(--muted);background:var(--surface-2);border-radius:999px;padding:1px 8px}
+.step-h .t p{color:var(--muted);font-size:.88rem;margin-top:2px}
+.step-b{padding:0 16px 16px 52px;display:flex;flex-direction:column;gap:10px}
+@media (max-width:560px){.step-b{padding-left:16px}}
+.codebox{position:relative;background:var(--code-bg);border:1px solid var(--code-line);border-radius:8px;min-width:0}
+.codebox .bar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--code-line);font-family:var(--font-mono);font-size:.7rem;color:#7fa6b3;text-transform:uppercase;letter-spacing:.08em}
+.copy{background:transparent;border:1px solid var(--code-line);color:#cdeee9;border-radius:6px;font:inherit;font-size:.72rem;padding:2px 9px;cursor:pointer;text-transform:none;letter-spacing:0}
+.copy:hover{border-color:#3dc7bd}
+pre{margin:0;padding:10px 12px;overflow-x:auto;font-family:var(--font-mono);font-size:.82rem;line-height:1.55;color:var(--code-fg);white-space:pre;tab-size:2}
+.note,.expect,.warnbox{border-radius:8px;padding:9px 12px;font-size:.88rem;display:flex;gap:10px}
+.note{background:var(--surface-2)}
+.expect{background:var(--ok-soft);color:var(--fg)}
+.warnbox{background:var(--warn-soft);color:var(--fg)}
+.note b,.expect b,.warnbox b{flex:none;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;padding-top:2px}
+.expect b{color:var(--ok)} .warnbox b{color:var(--warn)} .note b{color:var(--muted)}
+code.i{font-family:var(--font-mono);font-size:.84em;background:var(--surface-2);border-radius:4px;padding:1px 5px}
+a{color:var(--accent)}
+details{background:var(--surface);border:1px solid var(--line);border-radius:10px}
+summary{cursor:pointer;padding:12px 16px;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:10px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--muted);font-weight:500}
+details[open] summary::after{content:"–"}
+details .in{padding:0 16px 14px;display:flex;flex-direction:column;gap:10px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem;min-width:520px}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+td code,th code{font-family:var(--font-mono);font-size:.84em}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+footer{color:var(--muted);font-size:.8rem;display:flex;flex-direction:column;gap:4px}
+@media (prefers-reduced-motion:reduce){.progress i{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Day 08 · Chuẩn bị ở nhà, trước buổi học</div>
+    <h1>Cài đặt trước Day 08 (chỉ CPU)</h1>
+    <p class="lede">Làm ở nhà, trước buổi học: cài Python và thư viện, tải 3 model (YOLO26, YOLOE, SAM), cài Docker và CVAT, rồi chạy file kiểm tra. Chọn cấu hình máy bên trái; trang hiện đúng các bước cho máy của bạn. Tick từng bước khi xong, tiến độ được nhớ trên trình duyệt này.</p>
+  </header>
+
+  <div class="grid">
+    <aside class="panel sticky" aria-label="Cấu hình máy">
+      <div class="field">
+        <div class="label">1. Hệ điều hành</div>
+        <div class="opts" id="os-opts" role="group" aria-label="Hệ điều hành"></div>
+      </div>
+      <div class="field">
+        <div class="label">2. RAM</div>
+        <div class="seg" id="ram-opts" role="group" aria-label="RAM"></div>
+      </div>
+      <div class="field">
+        <div class="label">Tự nhận diện</div>
+        <div class="detect" id="detect"></div>
+        <div class="toolbar"><button class="btn ghost" id="redetect" type="button">Nhận diện lại</button></div>
+      </div>
+    </aside>
+
+    <main style="display:flex;flex-direction:column;gap:16px;min-width:0">
+      <section id="verdict" class="verdict" aria-live="polite"></section>
+      <section class="facts" id="facts" aria-label="Thông số dự kiến"></section>
+
+      <section class="panel" style="gap:10px">
+        <div class="sec-h"><h2>Các bước chuẩn bị</h2><div class="toolbar"><button class="btn ghost" id="plan-toggle" type="button"></button><button class="btn ghost" id="reset" type="button">Xoá tiến độ</button></div></div>
+        <div class="prow"><span id="ptext"></span><span id="ptime"></span></div>
+        <div class="progress" aria-hidden="true"><i id="pbar"></i></div>
+      </section>
+
+      <ol class="steps" id="steps"></ol>
+
+      <section style="display:flex;flex-direction:column;gap:10px">
+        <h2>Tải model bằng tay (nếu không muốn tải tự động)</h2>
+        <div class="panel" id="models"></div>
+      </section>
+
+      <section style="display:flex;flex-direction:column;gap:10px">
+        <h2>Gặp lỗi?</h2>
+        <div id="trouble" style="display:flex;flex-direction:column;gap:8px"></div>
+      </section>
+
+      <footer>
+        <span>Thời gian và dung lượng là ước lượng; phụ thuộc mạng và đời máy. File kiểm tra đã được chạy thử trên macOS; các lệnh cho Windows, WSL2 và Mac Intel chưa được thử trên máy thật.</span>
+        <span>Ngày học bạn sẽ nhận repo bài lab và copy thư mục models/ vào đó; không cần tải lại.</span>
+      </footer>
+    </main>
+  </div>
+</div>
+
+<script type="text/plain" id="setup-py">
+"""Day 08: tải model và kiểm tra cài đặt. Chạy trong thư mục day08, venv đã kích hoạt.
+
+    python day08_setup.py download --profile 8gb     # hoặc --profile 16gb
+    python day08_setup.py check                      # thư viện + chạy thử 3 model bằng CPU + CVAT
+    python day08_setup.py check --light              # máy dùng Colab: chỉ thư viện nhẹ + CVAT
+"""
+import importlib
+import os
+import pathlib
+import sys
+import time
+import urllib.request
+
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+GH = "https://github.com/ultralytics/assets/releases/download/v8.4.0/"
+PROFILES = {
+    "8gb": ["yolo26n.pt", "yoloe-26s-seg.pt", "mobileclip2_b.ts", "mobile_sam.pt", "sam2.1_t.pt"],
+    "16gb": ["yolo26n.pt", "yolo26s.pt", "yoloe-26s-seg.pt", "mobileclip2_b.ts", "mobile_sam.pt", "sam2.1_b.pt"],
+}
+MD = pathlib.Path("models").resolve()
+
+
+def download(profile):
+    MD.mkdir(exist_ok=True)
+    for name in PROFILES[profile]:
+        dst = MD / name
+        if dst.exists() and dst.stat().st_size > 1_000_000:
+            print(f"[ có ] {name}")
+            continue
+        tmp = MD / (name + ".part")
+        print(f"[tải ] {name} ...", end="", flush=True)
+        try:
+            with urllib.request.urlopen(GH + name, timeout=60) as r, open(tmp, "wb") as f:
+                total, got = int(r.headers.get("Content-Length") or 0), 0
+                while True:
+                    b = r.read(1 << 20)
+                    if not b:
+                        break
+                    f.write(b)
+                    got += len(b)
+                    if total:
+                        print(f"\r[tải ] {name} {got * 100 // total:3d}% ({total / 1e6:.0f} MB)", end="", flush=True)
+            tmp.replace(dst)
+            print("  xong")
+        except Exception as e:  # noqa
+            print(f"\n[LỖI] {name}: {e}\n       -> tải tay: {GH + name} rồi đặt vào thư mục models/")
+    print("Xong. Chạy tiếp: python day08_setup.py check")
+
+
+class Report:
+    def __init__(self):
+        self.ok = True
+
+    def line(self, ok, msg, fix=""):
+        self.ok = self.ok and bool(ok)
+        print(("[ OK ] " if ok else "[LỖI] ") + msg + (("\n       -> " + fix) if (fix and not ok) else ""))
+
+
+def check(light):
+    R = Report()
+    v = sys.version_info
+    R.line((3, 10) <= v[:2] <= (3, 13), f"Python {v.major}.{v.minor}.{v.micro}",
+           "cần Python 3.10 - 3.13 (khuyến nghị 3.12): tạo lại venv bằng Python 3.12")
+    pkgs = [("numpy", "numpy"), ("cv2", "opencv-python-headless"), ("PIL", "pillow"), ("matplotlib", "matplotlib"), ("yaml", "pyyaml")]
+    if not light:
+        pkgs += [("torch", "torch"), ("ultralytics", "ultralytics"), ("clip", "CLIP của ultralytics")]
+    for mod, name in pkgs:
+        try:
+            m = importlib.import_module(mod)
+            R.line(True, f"{mod} {getattr(m, '__version__', '')}")
+        except Exception as e:  # noqa
+            R.line(False, f"thiếu {mod}: {type(e).__name__}", f"cài lại theo bước 'Cài thư viện' ({name})")
+
+    if not light:
+        have = sorted(p.name for p in MD.glob("*.pt")) if MD.exists() else []
+        R.line(bool(have), "models/: " + (", ".join(have) if have else "(trống)"), "tải model: python day08_setup.py download --profile 8gb")
+        try:
+            from ultralytics import SAM, YOLO, YOLOE
+            from ultralytics.utils import ASSETS
+            img = str(ASSETS / "bus.jpg")  # ảnh mẫu có sẵn trong ultralytics, không cần mạng
+            yolo = next((MD / n for n in ("yolo26n.pt", "yolo26s.pt", "yolo26m.pt") if (MD / n).exists()), None)
+            box = None
+            if yolo:
+                t = time.time()
+                r = YOLO(str(yolo))(img, device="cpu", imgsz=640, verbose=False)[0]
+                R.line(len(r.boxes) > 0, f"{yolo.name}: {len(r.boxes)} box, {time.time() - t:.1f} giây (CPU)")
+                if len(r.boxes):
+                    box = r.boxes.xyxy[0].tolist()
+            else:
+                R.line(False, "chưa có yolo26n.pt trong models/")
+            ye = MD / "yoloe-26s-seg.pt"
+            if ye.exists():
+                cwd = os.getcwd()
+                os.chdir(MD)  # bộ mã hoá chữ mobileclip2_b.ts được đọc / tải trong models/
+                try:
+                    t = time.time()
+                    m = YOLOE(str(ye))
+                    names = ["bus", "person"]
+                    m.set_classes(names, m.get_text_pe(names))
+                    r = m(img, device="cpu", imgsz=640, verbose=False)[0]
+                finally:
+                    os.chdir(cwd)
+                R.line(len(r.boxes) > 0, f"YOLOE gõ chữ 'bus', 'person': {len(r.boxes)} box, {time.time() - t:.1f} giây")
+            else:
+                R.line(False, "chưa có yoloe-26s-seg.pt trong models/")
+            sam = next((MD / n for n in ("mobile_sam.pt", "sam2.1_t.pt", "sam2.1_b.pt", "sam_b.pt") if (MD / n).exists()), None)
+            if sam and box:
+                t = time.time()
+                r = SAM(str(sam))(img, bboxes=[box], device="cpu", verbose=False)[0]
+                area = int(r.masks.data[0].sum()) if r.masks is not None else 0
+                R.line(area > 0, f"{sam.name}: mask {area} px, {time.time() - t:.1f} giây")
+            elif not sam:
+                R.line(False, "chưa có model SAM (mobile_sam.pt hoặc sam2.1_*.pt) trong models/")
+        except Exception as e:  # noqa
+            R.line(False, f"chạy thử model lỗi: {type(e).__name__}: {e}", "xem mục 'Gặp lỗi?' của trang hướng dẫn")
+
+    try:
+        with urllib.request.urlopen("http://localhost:8080/api/server/about", timeout=8) as r:
+            R.line(r.status == 200, "CVAT trả lời ở http://localhost:8080")
+    except Exception as e:  # noqa
+        R.line(False, f"không kết nối được CVAT ({type(e).__name__})",
+               "mở Docker Desktop, vào thư mục cvat-2.81.0 và chạy: docker compose up -d")
+    print("\nSẴN SÀNG cho buổi học." if R.ok else "\nCòn mục [LỖI]: sửa rồi chạy lại.")
+    sys.exit(0 if R.ok else 1)
+
+
+if __name__ == "__main__":
+    a = sys.argv[1:]
+    if not a or "-h" in a or "--help" in a:
+        print(__doc__)
+        sys.exit(0)
+    if a[:1] == ["download"]:
+        prof = a[a.index("--profile") + 1] if "--profile" in a and len(a) > a.index("--profile") + 1 else "8gb"
+        if prof not in PROFILES:
+            sys.exit("--profile phải là 8gb hoặc 16gb")
+        download(prof)
+    elif a[:1] == ["check"]:
+        check("--light" in a)
+    else:
+        print(__doc__)
+</script>
+<script>
+(function(){
+'use strict';
+var GH='https://github.com/ultralytics/assets/releases/download/v8.4.0/';
+var HF='https://huggingface.co/Ultralytics/YOLO26/resolve/main/';
+var CVAT_ZIP='https://github.com/cvat-ai/cvat/archive/refs/tags/v2.81.0.zip';
+var SETUP_PY=document.getElementById('setup-py').textContent.replace(/^\n/,'');
+var MODELS={
+ '8gb':[['yolo26n.pt','YOLO26 nano: detector 80 lớp COCO',5.5,true],['yoloe-26s-seg.pt','YOLOE small: gõ chữ ra box + mask',31,false],['mobileclip2_b.ts','Bộ mã hoá chữ cho YOLOE (bắt buộc đi kèm)',254,false],['mobile_sam.pt','SAM 1 bản nhẹ (MobileSAM)',41,false],['sam2.1_t.pt','SAM 2.1 tiny',78,false]],
+ '16gb':[['yolo26n.pt','YOLO26 nano',5.5,true],['yolo26s.pt','YOLO26 small',20,true],['yoloe-26s-seg.pt','YOLOE small: gõ chữ ra box + mask',31,false],['mobileclip2_b.ts','Bộ mã hoá chữ cho YOLOE (bắt buộc đi kèm)',254,false],['mobile_sam.pt','SAM 1 bản nhẹ (MobileSAM)',41,false],['sam2.1_b.pt','SAM 2.1 base',162,false]]
+};
+var OS=[
+ {id:'win',  n:'Windows 10/11',            s:'PowerShell, không dùng WSL'},
+ {id:'wsl',  n:'Windows + WSL2 (Ubuntu)',  s:'Chạy trong Ubuntu trên Windows'},
+ {id:'macm', n:'macOS chip Apple (M1–M4)', s:'MacBook, Mac mini, iMac đời 2020 trở lại đây'},
+ {id:'maci', n:'macOS chip Intel',         s:'MacBook đời 2019 trở về trước'},
+ {id:'lin',  n:'Ubuntu / Linux',           s:'Ubuntu 22.04 hoặc 24.04, Debian'}
+];
+var RAM=[{id:'8',n:'8 GB trở xuống'},{id:'16',n:'16 GB trở lên'}];
+var S={os:null,ram:null,plan:null,planUser:false,done:{}};
+function load(){try{var j=JSON.parse(localStorage.getItem('d8prep')||'{}');['os','ram','plan','planUser'].forEach(function(k){if(j[k]!==undefined&&j[k]!==null)S[k]=j[k]});S.done=j.done||{};}catch(e){}}
+function save(){try{localStorage.setItem('d8prep',JSON.stringify(S));}catch(e){}}
+load();
+
+/* ---------- nhận diện ---------- */
+var DET={};
+function detect(){
+  var ua=navigator.userAgent||'', pf=(navigator.userAgentData&&navigator.userAgentData.platform)||navigator.platform||'', gl='';
+  try{var c=document.createElement('canvas');var g=c.getContext('webgl')||c.getContext('experimental-webgl');
+    if(g){var e=g.getExtension('WEBGL_debug_renderer_info');gl=e?String(g.getParameter(e.UNMASKED_RENDERER_WEBGL)):'';}}catch(e){}
+  var os=null,label='không rõ';
+  if(/Win/i.test(pf)||/Windows/i.test(ua)){os='win';label='Windows';}
+  else if(/Mac/i.test(pf)||/Macintosh/i.test(ua)){
+    if(/Apple (M\d|GPU)/i.test(gl)){os='macm';label='macOS, chip Apple';}
+    else if(/Intel/i.test(gl)){os='maci';label='macOS, chip Intel';}
+    else label='macOS (không phân biệt được chip)';
+  }else if(/Linux|X11|CrOS/i.test(pf+ua)&&!/Android/i.test(ua)){os='lin';label='Linux';}
+  else if(/Android|iPhone|iPad/i.test(ua)){label='điện thoại / máy tính bảng: mở trang này trên máy sẽ cài';}
+  var mem=navigator.deviceMemory||null;
+  DET={os:os,label:label,ram:(mem!==null&&mem<8)?'8':null,mem:mem,cores:navigator.hardwareConcurrency||null,gl:gl};
+}
+function renderDetect(){
+  var d=DET, chips=[];
+  if(d.cores) chips.push(d.cores+' luồng CPU');
+  chips.push(d.mem===null?'RAM: trình duyệt không cung cấp':(d.mem>=8?'RAM báo: 8 GB (trình duyệt không báo cao hơn)':'RAM báo: '+d.mem+' GB'));
+  if(d.gl) chips.push('GPU: '+d.gl.slice(0,38));
+  document.getElementById('detect').innerHTML='<div><b>Hệ điều hành:</b> '+esc(d.label)+'</div><div class="row">'+chips.map(function(c){return '<span class="chip">'+esc(c)+'</span>'}).join('')+'</div><div style="color:var(--muted)">Trình duyệt không nhìn thấy WSL, và Chrome báo RAM tối đa 8 GB. Máy từ 16 GB trở lên thì tự chọn.</div>';
+}
+function applyDetect(force){if(DET.os&&(!S.os||force))S.os=DET.os;if(DET.ram&&(!S.ram||force))S.ram=DET.ram;}
+
+/* ---------- đề xuất ---------- */
+function recommend(){
+  if(!S.os||!S.ram) return {plan:null,why:''};
+  if(S.os==='maci') return {plan:'colab',why:'PyTorch bản mới không còn bản dựng cho Mac Intel, nên cài model trên máy rất dễ lỗi. Model sẽ chạy trên Google Colab; máy bạn chỉ cần thư viện nhẹ và CVAT.'};
+  if(S.ram==='8') return {plan:'colab',why:'Với 8 GB RAM, CVAT (Docker) đã dùng 5–8 GB. Chạy thêm 3 model bằng CPU dễ hết bộ nhớ. Model sẽ chạy trên Google Colab; máy bạn giữ CVAT và thư viện nhẹ.'};
+  return {plan:'local',why:'16 GB RAM đủ chạy model cỡ nhỏ bằng CPU (vài giây mỗi ảnh) cùng lúc với CVAT.'};
+}
+function curPlan(){return (S.planUser&&S.plan)?S.plan:recommend().plan;}
+
+/* ---------- tiện ích lệnh ---------- */
+function isMac(){return S.os==='macm'||S.os==='maci';}
+function sh(){return S.os==='win'?'powershell':isMac()?'terminal':'bash';}
+function py(){return S.os==='win'?'py -3.12':isMac()?'python3.12':'python3';}
+function act(){return S.os==='win'?'.venv\\Scripts\\Activate.ps1':'source .venv/bin/activate';}
+function home(){return S.os==='win'?'cd $HOME':'cd ~';}
+
+function stepsFor(){
+  var os=S.os, ram=S.ram, plan=curPlan(), st=[], lin=(os==='wsl'||os==='lin');
+  var prof=ram==='8'?'8gb':'16gb';
+
+  if(os==='wsl'){
+    st.push({id:'wsl',t:'Bật WSL2 và cài Ubuntu',time:'10–20 phút, cần khởi động lại',why:'WSL2 là một Ubuntu thật chạy trong Windows. Các bước sau gõ trong cửa sổ Ubuntu.',
+      b:[{k:'cmd',l:'powershell (Run as administrator)',c:'wsl --install -d Ubuntu-24.04\n# khởi động lại máy khi được yêu cầu, mở "Ubuntu" từ Start menu, tạo tên người dùng + mật khẩu'},
+         {k:'expect',c:'Lệnh wsl -l -v trong PowerShell thấy Ubuntu-24.04 với VERSION là 2.'},
+         {k:'note',c:'Báo "virtualization is disabled": bật Virtualization (SVM / VT-x) trong BIOS rồi thử lại.'}]});
+    st.push({id:'wslcfg',t:'Giới hạn RAM cho WSL',time:'3 phút',why:'Mặc định WSL lấy tới một nửa RAM. Đặt trần để Windows không bị đơ.',
+      b:[{k:'cmd',l:'powershell',c:'notepad $env:USERPROFILE\\.wslconfig'},
+         {k:'cmd',l:'nội dung file .wslconfig (dán rồi Save)',c:'[wsl2]\n'+(ram==='8'?'memory=5GB\nprocessors=4':'memory=10GB\nprocessors=6')+'\nswap=8GB'},
+         {k:'cmd',l:'powershell',c:'wsl --shutdown'}]});
+  }
+
+  /* công cụ nền */
+  if(os==='win') st.push({id:'tools',t:'Cài Python 3.12, Git và Visual C++ Runtime',time:'5–10 phút',why:'Python 3.10–3.13 (khuyến nghị 3.12; bản 3.14+ chưa hỗ trợ đầy đủ thư viện). Git dùng trong buổi học. Visual C++ Runtime để PyTorch chạy.',
+    b:[{k:'cmd',l:'powershell',c:'winget install -e --id Python.Python.3.12\nwinget install -e --id Git.Git\nwinget install -e --id Microsoft.VCRedist.2015+.x64'},
+       {k:'note',c:'Đóng và mở lại PowerShell sau khi cài. Không có winget? Tải Python 3.12 ở python.org (tick "Add python.exe to PATH") và Git ở git-scm.com.'},
+       {k:'cmd',l:'powershell (kiểm tra)',c:'py -3.12 --version\ngit --version'},
+       {k:'expect',c:'In ra Python 3.12.x và git version 2.x.'}]});
+  if(lin) st.push({id:'tools',t:'Cài Python, venv, Git và công cụ build',time:'3–5 phút',why:'Ubuntu có Python sẵn nhưng thiếu venv và công cụ build.',
+    b:[{k:'cmd',l:'bash',c:'sudo apt update\nsudo apt install -y python3 python3-venv python3-pip git build-essential unzip curl'},
+       {k:'cmd',l:'bash (kiểm tra)',c:'python3 --version\ngit --version'},
+       {k:'expect',c:'Python 3.10 đến 3.13 là ổn (khuyến nghị 3.12; Ubuntu 22.04 có 3.10, 24.04 có 3.12).'}]});
+  if(isMac()) st.push({id:'tools',t:'Cài Command Line Tools, Homebrew, Python 3.12 và Git',time:'10–15 phút',why:'macOS cần Homebrew để cài đúng phiên bản Python.',
+    b:[{k:'cmd',l:'terminal',c:'xcode-select --install'},
+       {k:'cmd',l:'terminal (bỏ qua nếu đã có brew)',c:'/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'},
+       {k:'cmd',l:'terminal',c:'brew install python@3.12 git\npython3.12 --version'},
+       {k:'expect',c:'In ra Python 3.12.x.'}]});
+
+  /* thư mục + venv */
+  st.push({id:'venv',t:'Tạo thư mục day08 và môi trường ảo',time:'1 phút',why:'Mọi thứ của buổi học nằm trong một thư mục. Môi trường ảo giữ thư viện tách khỏi Python của hệ thống.',
+    b:[{k:'cmd',l:sh(),c:home()+'\nmkdir day08\ncd day08\n'+py()+' -m venv .venv\n'+act()+'\npython -m pip install -U pip'},
+       (os==='win'?{k:'warn',c:'PowerShell báo "running scripts is disabled": chạy Set-ExecutionPolicy -Scope CurrentUser RemoteSigned, chọn Y, rồi chạy lại dòng Activate.'}:{k:'note',c:os==='wsl'?'Để thư mục trong home của Ubuntu (~/day08), không để ở /mnt/c vì rất chậm.':'Mỗi lần mở terminal mới: vào lại day08 và chạy lại dòng source.'}),
+       {k:'expect',c:'Đầu dòng lệnh có (.venv).'}]});
+
+  if(plan==='local'){
+    if(os==='macm') st.push({id:'torch',t:'PyTorch (đi kèm bước sau)',time:'0 phút',why:'Trên Mac chip Apple, pip tự cài đúng bản PyTorch. Không cần bước riêng.',b:[{k:'note',c:'Muốn chạy thuần CPU khi thử: thêm device="cpu" (file kiểm tra đã làm sẵn).'}]});
+    else if(os==='maci') st.push({id:'torch',t:'Cài PyTorch bản cuối còn hỗ trợ Mac Intel',time:'5–10 phút',why:'Chỉ khi bạn tự chọn chạy local trên Mac Intel. Dễ lỗi nhất.',
+      b:[{k:'cmd',l:'terminal (đã kích hoạt venv)',c:'pip install "torch==2.2.2" "torchvision==0.17.2" "numpy<2"'},
+         {k:'warn',c:'Chưa được kiểm chứng với ultralytics mới. Nếu bước sau hoặc file kiểm tra lỗi: bấm "Đổi sang Colab" ở trên.'}]});
+    else st.push({id:'torch',t:'Cài PyTorch bản CPU',time:'3–6 phút (~200 MB)',why:'Bản mặc định kèm thư viện CUDA nặng hàng GB, máy không GPU không dùng tới.',
+      b:[{k:'cmd',l:sh()+' (đã kích hoạt venv)',c:'pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu'},
+         {k:'expect',c:'Kết thúc bằng Successfully installed torch-... +cpu.'}]});
+    st.push({id:'libs',t:'Cài thư viện',time:'5–10 phút',why:'ultralytics chạy YOLO26, YOLOE và SAM. CLIP là phần YOLOE cần để hiểu chữ.',
+      b:[{k:'cmd',l:sh()+' (đã kích hoạt venv)',c:'pip install "ultralytics>=8.4.0" opencv-python-headless pillow matplotlib pyyaml\npip install https://github.com/ultralytics/CLIP/archive/refs/heads/main.zip'},
+         {k:'expect',c:'Cả hai lệnh kết thúc bằng Successfully installed ...'}]});
+  }else{
+    st.push({id:'libs',t:'Cài thư viện nhẹ (không có PyTorch)',time:'2 phút',why:'Máy bạn chỉ chạy các script đo và kiểm tra. Model chạy trên Colab.',
+      b:[{k:'cmd',l:sh()+' (đã kích hoạt venv)',c:'pip install numpy pillow opencv-python-headless matplotlib pyyaml'},
+         {k:'expect',c:'Kết thúc bằng Successfully installed ...'}]});
+  }
+
+  st.push({id:'script',t:'Tạo file day08_setup.py',time:'2 phút',why:'File này tải model và kiểm tra mọi thứ. Không cần Git.',
+    b:[{k:'note',c:'Mở trình soạn thảo (Notepad, VS Code, TextEdit ở chế độ Plain Text...), dán nội dung dưới đây, lưu thành day08_setup.py trong thư mục day08.'},
+       {k:'cmd',l:'day08_setup.py',c:SETUP_PY}]});
+
+  if(plan==='local'){
+    st.push({id:'models',t:'Tải 3 model',time:'3–15 phút theo mạng',why:'YOLO26 (detector), YOLOE (gõ chữ), SAM (mask). Bộ '+prof+' chọn sẵn cỡ hợp với máy của bạn.',
+      b:[{k:'cmd',l:sh()+' (trong day08, đã kích hoạt venv)',c:'python day08_setup.py download --profile '+prof},
+         {k:'note',c:'Không muốn tải tự động? Tải từng file ở mục "Tải model bằng tay" bên dưới rồi đặt vào thư mục day08/models/.'},
+         {k:'expect',c:'Mỗi file in "xong". Thư mục models/ có khoảng '+(prof==='8gb'?'410 MB':'510 MB')+'.'}]});
+  }else{
+    st.push({id:'colab',t:'Thử Google Colab có GPU',time:'5 phút',why:'Trong buổi học, model chạy trên Colab. Thử trước để chắc tài khoản dùng được GPU.',
+      b:[{k:'link',l:'Mở Google Colab',h:'https://colab.research.google.com/'},
+         {k:'note',c:'Đăng nhập Google → New notebook → Runtime → Change runtime type → T4 GPU → Save. Gõ lệnh dưới vào ô đầu tiên, nhấn Shift+Enter.'},
+         {k:'cmd',l:'ô Colab',c:'!nvidia-smi -L'},
+         {k:'expect',c:'In ra "GPU 0: Tesla T4". Nếu báo không có GPU, thử lại sau vài giờ (GPU miễn phí có hạn mức).'}]});
+  }
+
+  /* Docker + CVAT */
+  var dk;
+  if(os==='win') dk={l:'powershell',c:'winget install -e --id Docker.DockerDesktop\n# khởi động lại máy, mở Docker Desktop, Settings → General → bật "Use WSL 2 based engine"',w:'Lỗi virtualization: bật Virtualization trong BIOS và Virtual Machine Platform trong Windows Features.'};
+  else if(os==='wsl') dk={l:'powershell (Windows)',c:'winget install -e --id Docker.DockerDesktop\n# mở Docker Desktop → Settings → Resources → WSL Integration → bật Ubuntu-24.04 → Apply & Restart',w:'Sau đó gõ docker ngay trong cửa sổ Ubuntu. Không cài Docker Engine riêng trong WSL để tránh xung đột.'};
+  else if(isMac()) dk={l:'terminal',c:'brew install --cask docker\nopen -a Docker',w:os==='macm'?'Image CVAT chỉ có bản amd64 nên trên chip Apple chạy qua giả lập: được nhưng chậm hơn. Docker có thể in cảnh báo "platform linux/amd64 does not match": bình thường. Nếu có tuỳ chọn Settings → General → "Use Rosetta for x86/amd64 emulation", hãy bật.':'Mac Intel chạy image CVAT trực tiếp.'};
+  else dk={l:'bash',c:'curl -fsSL https://get.docker.com | sudo sh\nsudo usermod -aG docker $USER\n# đăng xuất rồi đăng nhập lại để quyền docker có hiệu lực',w:'Muốn cài theo cách chính thức từng bước: docs.docker.com/engine/install/ubuntu.'};
+  st.push({id:'docker',t:'Cài Docker',time:'10–20 phút',why:'CVAT của lớp chạy trong Docker trên máy bạn, không dùng bản web.',
+    b:[{k:'cmd',l:dk.l,c:dk.c},{k:'note',c:dk.w},
+       {k:'cmd',l:sh()+' (kiểm tra)',c:'docker --version\ndocker compose version'},
+       {k:'expect',c:'Cả hai lệnh in ra số phiên bản. Docker Desktop (Windows, Mac) phải đang mở.'}]});
+  var dl=os==='win'
+    ?'cd $HOME\\day08\nInvoke-WebRequest '+CVAT_ZIP+' -OutFile cvat.zip\nExpand-Archive cvat.zip -DestinationPath .\ncd cvat-2.81.0\ndocker compose up -d\ndocker exec -it cvat_server bash -ic \'python3 ~/manage.py createsuperuser\''
+    :'cd ~/day08\ncurl -L -o cvat.zip '+CVAT_ZIP+'\nunzip -q cvat.zip\ncd cvat-2.81.0\ndocker compose up -d\ndocker exec -it cvat_server bash -ic \'python3 ~/manage.py createsuperuser\'';
+  st.push({id:'cvat',t:'Chạy CVAT 2.81 bằng Docker',time:'20–30 phút lần đầu',why:'Tải bản CVAT 2.81 dạng zip (không cần Git), rồi bật bằng Docker. Lần đầu tải image khá lâu.',
+    b:[{k:'cmd',l:sh(),c:dl},
+       {k:'note',c:'Lệnh cuối hỏi tên đăng nhập, email (bỏ trống được) và mật khẩu: đây là tài khoản quản trị CVAT trên máy bạn. Ghi nhớ lại.'},
+       {k:'expect',c:'Mở http://localhost:8080 và đăng nhập được.'},
+       {k:'warn',c:ram==='8'?'Máy 8 GB: Docker Desktop → Settings → Resources, đặt Memory khoảng 5 GB'+((os==='win'||os==='wsl')?' (hoặc memory trong .wslconfig)':'')+'. Chỉ bật CVAT khi cần, đóng trình duyệt thừa.':'Để Docker dùng 6–8 GB RAM là đủ.'},
+       {k:'note',c:'Tắt khi không dùng: vào thư mục cvat-2.81.0, chạy docker compose down (dữ liệu vẫn giữ). Bật lại: docker compose up -d.'}]});
+  if(os==='wsl') st[st.length-1].b.push({k:'note',c:'Trong buổi học cần kéo ảnh từ WSL vào CVAT trên trình duyệt Windows: chạy explorer.exe . trong thư mục chứa ảnh để mở bằng File Explorer.'});
+
+  st.push({id:'check',t:'Chạy file kiểm tra',time:'1–3 phút',why:'Xác nhận thư viện, model và CVAT đều chạy. Ảnh dùng để thử có sẵn trong thư viện ultralytics, không cần mạng.',
+    b:[{k:'cmd',l:sh()+' (trong day08, đã kích hoạt venv, CVAT đang chạy)',c:'python day08_setup.py check'+(plan==='colab'?' --light':'')},
+       {k:'expect',c:plan==='colab'?'Mọi dòng [ OK ], dòng cuối "SẴN SÀNG cho buổi học".':'Mọi dòng [ OK ]: YOLO26 ra vài box, YOLOE ra box khi gõ chữ "bus", SAM ra mask. Dòng cuối "SẴN SÀNG cho buổi học".'},
+       {k:'note',c:'Chụp màn hình kết quả, giảng viên có thể hỏi ở đầu buổi.'}]});
+  return st;
+}
+
+/* ---------- model tải tay ---------- */
+function modelsView(){
+  var prof=S.ram==='16'?'16gb':'8gb', plan=curPlan();
+  var h='';
+  if(plan==='colab') h+='<div class="note"><b>Ghi chú</b><span>Bạn chạy model trên Colab nên không cần tải model về máy. Bảng dưới để tham khảo.</span></div>';
+  h+='<p>Tải từng file, đặt vào thư mục <code class="i">day08/models/</code> (tạo thư mục nếu chưa có). Đúng tên file như trong bảng. Bộ cho máy '+(prof==='8gb'?'8 GB':'16 GB')+':</p>';
+  h+='<div class="tbl"><table><thead><tr><th>File</th><th>Là gì</th><th>Dung lượng</th><th>Link tải</th></tr></thead><tbody>'+
+    MODELS[prof].map(function(m){return '<tr><td><code>'+m[0]+'</code></td><td>'+esc(m[1])+'</td><td style="font-variant-numeric:tabular-nums">'+m[2]+' MB</td><td><a href="'+GH+m[0]+'" target="_blank" rel="noopener">GitHub</a>'+(m[3]?' · <a href="'+HF+m[0]+'" target="_blank" rel="noopener">Hugging Face</a>':'')+'</td></tr>'}).join('')+
+    '</tbody></table></div>';
+  h+='<div class="note"><b>Ghi chú</b><span>Tất cả file lấy từ trang phát hành chính thức của Ultralytics (github.com/ultralytics/assets). YOLO26 có thêm bản sao trên Hugging Face (huggingface.co/Ultralytics/YOLO26). Không tải file .pt từ nguồn lạ: file .pt có thể chứa mã chạy được.</span></div>';
+  return h;
+}
+
+/* ---------- lỗi ---------- */
+function troubleFor(){
+  var os=S.os, T=[];
+  T.push(['pip báo "No matching distribution found for torch"','Python là 3.14+ chưa hỗ trợ hoặc dưới 3.10, hoặc sai kiến trúc. Dùng Python 3.10–3.13 (3.12 khuyến nghị), tạo lại venv rồi cài lại.']);
+  T.push(['Tải model chậm hoặc đứt giữa chừng','Chạy lại python day08_setup.py download: file đã có được bỏ qua. Hoặc tải tay theo bảng ở trên.']);
+  T.push(['file kiểm tra báo "thiếu clip"','Chạy lại: pip install https://github.com/ultralytics/CLIP/archive/refs/heads/main.zip']);
+  T.push(['YOLOE lần đầu chạy lâu hoặc lỗi tải mobileclip','YOLOE cần file mobileclip2_b.ts (254 MB) trong models/. Tải tay theo bảng rồi chạy lại.']);
+  T.push(['Hết bộ nhớ (Killed, MemoryError) hoặc máy đơ','Tắt CVAT khi chạy model (docker compose down), đóng trình duyệt thừa. Máy 8 GB: chuyển sang phương án Colab.']);
+  T.push(['Không mở được http://localhost:8080','Docker Desktop chưa mở, hoặc CVAT chưa chạy. Vào thư mục cvat-2.81.0, chạy docker compose up -d, đợi 1–2 phút. Xem trạng thái: docker compose ps.']);
+  T.push(['Cổng 8080 đã bị dùng','Một chương trình khác dùng cổng 8080. Tắt chương trình đó, hoặc hỏi giảng viên cách đổi cổng.']);
+  if(os==='win'){
+    T.push(['PowerShell: "running scripts is disabled on this system"','Chạy Set-ExecutionPolicy -Scope CurrentUser RemoteSigned, chọn Y, kích hoạt venv lại.']);
+    T.push(['ImportError: DLL load failed khi import torch','Cài Visual C++ Runtime: winget install -e --id Microsoft.VCRedist.2015+.x64, mở lại PowerShell.']);
+    T.push(['Docker Desktop không khởi động','Bật Virtualization trong BIOS, bật Virtual Machine Platform và Windows Subsystem for Linux trong Windows Features, khởi động lại.']);
+    T.push(['Đường dẫn có dấu / OneDrive làm pip lỗi','Để thư mục day08 ở đường dẫn ngắn, không dấu, không nằm trong OneDrive (ví dụ C:\\day08).']);
+  }
+  if(os==='wsl'){
+    T.push(['WSL đọc file rất chậm','Thư mục đang ở /mnt/c. Làm trong ~/day08.']);
+    T.push(['Windows đơ khi chạy','Kiểm tra .wslconfig (memory=5GB cho máy 8 GB), rồi wsl --shutdown.']);
+    T.push(['Lệnh docker không có trong Ubuntu','Docker Desktop → Settings → Resources → WSL Integration → bật Ubuntu, Apply & Restart.']);
+  }
+  if(os==='lin'||os==='wsl'){
+    T.push(['"ensurepip is not available" khi tạo venv','sudo apt install -y python3-venv, tạo lại venv.']);
+    T.push(['docker: permission denied','Chưa đăng xuất / đăng nhập lại sau usermod -aG docker. Hoặc tạm dùng sudo docker ...']);
+  }
+  if(os==='macm') T.push(['CVAT chạy rất chậm trên Mac chip Apple','Do giả lập amd64. Bật Rosetta trong Docker Desktop nếu có, cho Docker 6–8 GB RAM, kiên nhẫn ở lần mở đầu.']);
+  if(os==='maci') T.push(['Lỗi khi cài torch / ultralytics trên Mac Intel','Giới hạn của Mac Intel. Bấm "Đổi sang Colab".']);
+  return T;
+}
+
+/* ---------- hiển thị ---------- */
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+var cmdN=0;
+function cmdBox(label,text){var id='c'+(++cmdN);return '<div class="codebox"><div class="bar"><span>'+esc(label||'')+'</span><button class="copy" type="button" data-copy="'+id+'">Copy</button></div><pre id="'+id+'"'+(text.length>1500?' style="max-height:320px;overflow:auto"':'')+'>'+esc(text)+'</pre></div>';}
+function block(b){
+  if(b.k==='cmd') return cmdBox(b.l,b.c);
+  if(b.k==='note') return '<div class="note"><b>Ghi chú</b><span>'+esc(b.c)+'</span></div>';
+  if(b.k==='expect') return '<div class="expect"><b>Kết quả đúng</b><span>'+esc(b.c)+'</span></div>';
+  if(b.k==='warn') return '<div class="warnbox"><b>Lưu ý</b><span>'+esc(b.c)+'</span></div>';
+  if(b.k==='link') return '<div><a class="btn" style="display:inline-block;text-decoration:none" target="_blank" rel="noopener" href="'+esc(b.h)+'">'+esc(b.l)+'</a></div>';
+  return '';
+}
+function opts(el,list,key,seg){el.innerHTML=list.map(function(o){var on=S[key]===o.id;return '<button type="button" class="opt" data-k="'+key+'" data-v="'+o.id+'" aria-pressed="'+on+'">'+(seg?'':'<span class="dot"></span>')+'<span><b>'+esc(o.n)+'</b>'+(o.s?'<span class="s">'+esc(o.s)+'</span>':'')+'</span></button>'}).join('');}
+function render(){
+  opts(document.getElementById('os-opts'),OS,'os');
+  opts(document.getElementById('ram-opts'),RAM,'ram',true);
+  renderDetect();
+  var v=document.getElementById('verdict'), f=document.getElementById('facts'), st=document.getElementById('steps');
+  if(!S.os||!S.ram){
+    v.className='verdict'; v.innerHTML='<div class="tag" style="background:var(--surface-2);color:var(--muted)">Chờ chọn</div><h2>Chọn hệ điều hành và RAM</h2><p style="color:var(--muted)">'+(!S.os?'Chưa xác định được hệ điều hành. ':'')+(!S.ram?'Trình duyệt không biết RAM của bạn: hãy chọn 8 GB hoặc 16 GB trở lên.':'')+'</p>';
+    f.innerHTML='';st.innerHTML='';document.getElementById('models').innerHTML='<p style="color:var(--muted)">Chọn cấu hình để xem.</p>';document.getElementById('trouble').innerHTML='';
+    document.getElementById('ptext').textContent='';document.getElementById('ptime').textContent='';document.getElementById('pbar').style.width='0';document.getElementById('plan-toggle').hidden=true;return;
+  }
+  var rec=recommend(), plan=curPlan(), local=plan==='local';
+  document.getElementById('plan-toggle').hidden=false;
+  v.className='verdict '+(local?'local':'colab');
+  v.innerHTML='<div class="tag">'+(local?'Model trên máy':'Model trên Colab')+'</div><h2>'+(local?'Chạy model trên máy bằng CPU, CVAT bằng Docker':'Model chạy trên Google Colab, CVAT bằng Docker trên máy')+'</h2><p style="color:var(--muted)">'+esc(rec.why)+(S.planUser&&S.plan!==rec.plan?' Bạn đã chọn khác với đề xuất.':'')+'</p>';
+  var prof=S.ram==='16'?'16gb':'8gb';
+  f.innerHTML=[['Tổng thời gian','khoảng '+(local?'60–90':'45–60')+' phút'],['Ổ đĩa','khoảng '+(local?(prof==='8gb'?'9':'10'):'7')+' GB (gồm CVAT ~6 GB)'],['Model trên máy',local?(prof==='8gb'?'YOLO26n, YOLOE-26s, MobileSAM, SAM 2.1 tiny':'YOLO26n/s, YOLOE-26s, MobileSAM, SAM 2.1 base'):'không (chạy trên Colab)'],['CVAT','Docker, 5–8 GB RAM khi chạy']].map(function(x){return '<div class="fact"><div class="k">'+x[0]+'</div><div class="v">'+esc(x[1])+'</div></div>'}).join('');
+  document.getElementById('plan-toggle').textContent=local?'Đổi sang Colab':'Đổi sang chạy model trên máy';
+  var steps=stepsFor(); cmdN=0;
+  st.innerHTML=steps.map(function(s,i){var d=!!S.done[s.id];
+    return '<li class="step'+(d?' done':'')+'"><div class="step-h"><button type="button" class="chk" data-step="'+s.id+'" aria-label="Đánh dấu xong bước '+(i+1)+'" aria-pressed="'+d+'">✓</button><div class="t"><h3><span>Bước '+(i+1)+'. '+esc(s.t)+'</span><span class="badge">'+esc(s.time)+'</span></h3><p>'+esc(s.why)+'</p></div></div><div class="step-b">'+s.b.map(block).join('')+'</div></li>'}).join('');
+  updateProgress(steps);
+  document.getElementById('models').innerHTML=modelsView();
+  document.getElementById('trouble').innerHTML=troubleFor().map(function(t){return '<details><summary>'+esc(t[0])+'</summary><div class="in"><p>'+esc(t[1])+'</p></div></details>'}).join('');
+}
+function updateProgress(steps){var n=steps.length,d=steps.filter(function(s){return S.done[s.id]}).length;
+  document.getElementById('ptext').textContent=d+' / '+n+' bước xong';document.getElementById('ptime').textContent=d===n?'Sẵn sàng cho buổi học':'';document.getElementById('pbar').style.width=(n?Math.round(d/n*100):0)+'%';}
+
+document.addEventListener('click',function(e){
+  var t=e.target.closest('button'); if(!t) return;
+  if(t.dataset.k){S[t.dataset.k]=t.dataset.v;S.planUser=false;S.plan=null;save();render();return;}
+  if(t.dataset.step){var id=t.dataset.step;S.done[id]=!S.done[id];save();var li=t.closest('.step');li.classList.toggle('done',!!S.done[id]);t.setAttribute('aria-pressed',!!S.done[id]);updateProgress(stepsFor());return;}
+  if(t.dataset.copy){var pre=document.getElementById(t.dataset.copy),txt=pre.textContent;
+    var ok=function(){t.textContent='Đã copy';setTimeout(function(){t.textContent='Copy'},1400)};
+    var fb=function(){var r=document.createRange();r.selectNodeContents(pre);var s=window.getSelection();s.removeAllRanges();s.addRange(r);t.textContent='Đã chọn, nhấn Ctrl+C';setTimeout(function(){t.textContent='Copy'},2200)};
+    try{navigator.clipboard.writeText(txt).then(ok,fb)}catch(err){fb()}return;}
+  if(t.id==='redetect'){detect();applyDetect(true);save();render();return;}
+  if(t.id==='plan-toggle'){S.plan=curPlan()==='local'?'colab':'local';S.planUser=true;save();render();return;}
+  if(t.id==='reset'){S.done={};save();render();return;}
+});
+detect(); applyDetect(false); save(); render();
+})();
+</script>
+
+</html>

@@ -1,0 +1,47 @@
+{
+  "version": "v1.0",
+  "ignore_class": "ignore_region",
+  "classes": [
+    {"name": "person", "definition": "Người (đi bộ, ngồi trên xe, ngồi bán hàng). Người ngồi trên xe vẫn có box riêng."},
+    {"name": "bicycle", "definition": "Xe đạp thường (kể cả xe đạp chở hàng)."},
+    {"name": "motorbike", "definition": "Xe máy, mô tô (không tính người ngồi trên xe)."},
+    {"name": "car", "definition": "Ô tô con, taxi, SUV, bán tải, minivan."},
+    {"name": "bus", "definition": "Xe buýt, xe khách lớn."},
+    {"name": "truck", "definition": "Xe tải có buồng lái và thùng hàng, 4 bánh trở lên."},
+    {"name": "three_wheeler", "definition": "Xe ba bánh: tuk-tuk, xích lô (cyclo), xe ba gác / xe ba bánh chở hàng."},
+    {"name": "ignore_region", "definition": "Vùng bỏ qua: đám đông quá dày hoặc quá mờ không tách được từng vật. Bỏ sót trong vùng này không tính là lỗi."}
+  ],
+  "attributes": [
+    {"name": "conf", "type": "text", "values": [], "default": ""},
+    {"name": "can_review", "type": "checkbox", "values": [], "default": "false"}
+  ],
+  "coco_map": {
+    "person": "person",
+    "bicycle": "bicycle",
+    "motorcycle": "motorbike",
+    "car": "car",
+    "bus": "bus",
+    "truck": "truck"
+  },
+  "prompts": {
+    "three_wheeler": ["tuk-tuk", "cyclo", "cargo tricycle"],
+    "person": ["person"],
+    "bicycle": ["bicycle"],
+    "motorbike": ["motorbike"],
+    "car": ["car"],
+    "bus": ["bus"],
+    "truck": ["truck"]
+  },
+  "rules": {
+    "min_box_height_px": 20,
+    "match_iou": 0.5,
+    "accept_iou": 0.9,
+    "accept_mask_iou": 0.85,
+    "trap_catch_min": 0.8,
+    "error_rate_img_max": 0.02,
+    "self_iou_min": 0.85,
+    "self_class_min": 0.95,
+    "recall_target": 0.9,
+    "self_unmatched_max": 0.1
+  }
+}

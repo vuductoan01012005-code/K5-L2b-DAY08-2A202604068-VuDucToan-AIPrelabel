@@ -1,0 +1,4 @@
+# -*- coding: utf-8 -*-
+# Chỉ cần cho đường "CVAT trực tiếp" (docs/CVAT_AI.md, mục B3): cvat-cli auto-annotate / agent
+cvat-sdk>=2.80
+cvat-cli>=2.80
