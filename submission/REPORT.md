@@ -1,13 +1,18 @@
-# Báo cáo Day 08 — <<MSHV - Họ và tên>>
+# Báo cáo Day 08 — 2A202604068 - Vũ Đức Toàn
 
 > Một file duy nhất cho cả bài (đã gộp recipe, QC và ghi chú cá nhân). Mọi con số kèm **mẫu số** và nguồn (file nào). Viết bằng lời của bạn.
 
 ## 1. Model và recipe (Part 2–3)
 
-| Lớp | Model + cỡ | Ngưỡng | Vì sao (dẫn `run_id` trong `model_log.csv`) |
-|---|---|---|---|
-| person / bicycle / motorbike / car / bus / truck | <<YOLO26m>> | <<theo lớp, từ threshold_sweep>> | <<>> |
-| three_wheeler | <<YOLOE-26s, prompt: ...>> | <<>> | <<>> |
+| Lớp           | Model + cỡ               |          Ngưỡng | Vì sao (dẫn `run_id` trong `model_log.csv`)                                                                              |
+| ------------- | ------------------------ | --------------: | ------------------------------------------------------------------------------------------------------------------------ |
+| person        | YOLO26m                  |            0.50 | Threshold sweep đạt recall 100%, precision 36% trên 8 đối tượng gold. Run ID: [tra trong model_log.csv]                  |
+| bicycle       | YOLO26m                  | 0.30 (mặc định) | Có dưới 5 đối tượng gold (thực tế 0 đối tượng), không đủ dữ liệu để chọn ngưỡng riêng. Run ID: [tra trong model_log.csv] |
+| motorbike     | YOLO26m                  |            0.10 | Threshold sweep đạt recall 100%, precision 23% trên 7 đối tượng gold. Run ID: [tra trong model_log.csv]                  |
+| car           | YOLO26m                  | 0.30 (mặc định) | Không có ngưỡng <= 0.50 đạt mục tiêu recall 90%; recall tối đa chỉ 86%. Run ID: [tra trong model_log.csv]                |
+| bus           | YOLO26m                  | 0.30 (mặc định) | Có dưới 5 đối tượng gold (thực tế 0 đối tượng), không đủ dữ liệu để chọn ngưỡng riêng. Run ID: [tra trong model_log.csv] |
+| truck         | YOLO26m                  | 0.30 (mặc định) | Có dưới 5 đối tượng gold (thực tế 0 đối tượng), không đủ dữ liệu để chọn ngưỡng riêng. Run ID: [tra trong model_log.csv] |
+| three_wheeler | YOLOE (chưa xác định cỡ) |            0.15 | Threshold sweep đạt recall 100%, precision 67% trên 6 đối tượng gold. Run ID: [tra trong model_log.csv]                  |
 
 - Lệnh `merge_prelabels.py` đã dùng (dán nguyên): <<>>
 - **Phiên bản SAM bạn chọn** (SAM 1 / 2.1 / 3) và lý do: <<chất lượng mask, tốc độ, RAM, quyền truy cập>>
@@ -17,12 +22,12 @@
 
 ## 2. AI error profile (từ `qc/review_stats.md`)
 
-| Trạng thái | Số | Tỉ lệ | Mẫu số |
-|---|---|---|---|
-| accepted | <<>> | <<>> | <<box máy>> |
-| edited | <<>> | <<>> | <<>> |
-| deleted | <<>> | <<>> | <<>> |
-| added | <<>> | <<>> | <<đối tượng sau duyệt>> |
+| Trạng thái | Số   | Tỉ lệ | Mẫu số                  |
+| ---------- | ---- | ----- | ----------------------- |
+| accepted   | <<>> | <<>>  | <<box máy>>             |
+| edited     | <<>> | <<>>  | <<>>                    |
+| deleted    | <<>> | <<>>  | <<>>                    |
+| added      | <<>> | <<>>  | <<đối tượng sau duyệt>> |
 
 - Lớp nào máy tệ nhất? Vì sao (dẫn ảnh)? <<>>
 - So với gold: precision / recall của **máy** <<>> (mẫu số: <<đối tượng gold>>)
@@ -43,12 +48,12 @@
 
 ## 5. Mask SAM cho 3 vật (Part 5)
 
-| Ảnh | SAM (phiên bản) | Số click | Mask gồm người lái / hàng hoá? | Lỗi quan sát | File trong `masks/` |
-|---|---|---|---|---|---|
-| <<img_0xx>> | <<>> | <<>> | <<>> | <<>> | <<>> |
+| Ảnh         | SAM (phiên bản) | Số click | Mask gồm người lái / hàng hoá? | Lỗi quan sát | File trong `masks/` |
+| ----------- | --------------- | -------- | ------------------------------ | ------------ | ------------------- |
+| <<img_0xx>> | <<>>            | <<>>     | <<>>                           | <<>>         | <<>>                |
 
 - Đối chiếu guideline mục 4.2: quy tắc nào giúp, quy tắc nào thiếu? <<>>
-- *(Tuỳ chọn)* Interactor SAM trong CVAT: làm được / không (lỗi gì, đã thử gì); khác gì offline: <<>>
+- _(Tuỳ chọn)_ Interactor SAM trong CVAT: làm được / không (lỗi gì, đã thử gì); khác gì offline: <<>>
 
 ## 6. Calibration (Part 6)
 
