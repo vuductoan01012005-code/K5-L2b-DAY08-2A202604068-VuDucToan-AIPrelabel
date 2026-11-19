@@ -2,13 +2,14 @@
   <img src="docs/assets/hero.png" alt="Day 08 Lab: AI hỗ trợ gán nhãn" width="100%">
 </p>
 
-# Day 08 Lab — AI hỗ trợ gán nhãn: Pre-label, Review, Calibration
+# Day 08 Lab — 2A202604068 - Vũ Đức Toàn
 
 <p align="center">
   <img alt="cá nhân" src="https://img.shields.io/badge/lab-cá%20nhân-0b1f3a">
   <img alt="thời lượng" src="https://img.shields.io/badge/thời%20lượng-4%20giờ-ff8a3d">
   <img alt="ảnh" src="https://img.shields.io/badge/dữ%20liệu-36%20ảnh-12b3a8">
-  <img alt="python" src="https://img.shields.io/badge/python-3.10–3.13-3776ab">
+  <img alt="python" src="https://img.shields.io/badge/python-3.10–3.13-3776ab">
+
   <img alt="gpu" src="https://img.shields.io/badge/GPU-không%20bắt%20buộc-2fbf71">
   <a href="https://colab.research.google.com/github/VinUni-AI20k/K5-L23-Day08-AI-Assisted-Labeling/blob/main/notebooks/day08_colab.ipynb"><img alt="Mở trong Colab" src="https://colab.research.google.com/assets/colab-badge.svg"></a>
 </p>
@@ -19,13 +20,13 @@
 
 Trong **4 giờ trên lớp** (cài đặt làm trước ~45 phút): chạy ba công cụ pre-label **từ đơn giản đến phức tạp** (YOLO26 → SAM → YOLOE), đưa kết quả vào **CVAT**, **review có quy trình** (có ảnh bẫy để đo chính bạn), rồi **calibration** lại nhãn và guideline.
 
-| Việc | Công cụ |
-|---|---|
-| Detector danh mục cố định | **YOLO26** |
-| Click ra mask (**SAM bắt buộc**, chọn SAM 1 · 2.1 · 3) | **SAM** |
-| Gõ chữ ra box + mask (open-vocabulary) | **YOLOE** (nâng cao: Grounding DINO, OWLv2, SAM 3) |
-| Đưa nhãn vào CVAT & review | CVAT: import · AI Tools · `cvat-cli` |
-| Đo & calibration | `review_stats` · `threshold_sweep` · QC · Release / Hold / Rework |
+| Việc                                                   | Công cụ                                                           |
+| ------------------------------------------------------ | ----------------------------------------------------------------- |
+| Detector danh mục cố định                              | **YOLO26**                                                        |
+| Click ra mask (**SAM bắt buộc**, chọn SAM 1 · 2.1 · 3) | **SAM**                                                           |
+| Gõ chữ ra box + mask (open-vocabulary)                 | **YOLOE** (nâng cao: Grounding DINO, OWLv2, SAM 3)                |
+| Đưa nhãn vào CVAT & review                             | CVAT: import · AI Tools · `cvat-cli`                              |
+| Đo & calibration                                       | `review_stats` · `threshold_sweep` · QC · Release / Hold / Rework |
 
 ![Bốn họ model](docs/assets/model_families.png)
 
@@ -56,14 +57,14 @@ flowchart LR
 
 ![Bốn cách pre-label trên cùng một ảnh](docs/assets/model_tour.jpg)
 
-*Cùng một ảnh: (1) YOLO26 gọi tuk-tuk là car/truck · (2) YOLOE gõ chữ tìm đúng nhưng box lỏng · (3) Grounding DINO · (4) box → SAM → mask.*
+_Cùng một ảnh: (1) YOLO26 gọi tuk-tuk là car/truck · (2) YOLOE gõ chữ tìm đúng nhưng box lỏng · (3) Grounding DINO · (4) box → SAM → mask._
 
 ## Bắt đầu nhanh (5 bước)
 
 1. **Fork** repo thành repo **public** của bạn (tên: xem [SUBMISSION.md](SUBMISSION.md)), `git clone`.
-2. **Trước buổi học** (~45 phút): cài môi trường [docs/SETUP.md](docs/SETUP.md) → `python scripts/check_env.py` ra **SẴN SÀNG**. *Máy yếu? Dùng* **[Google Colab](docs/COLAB.md)**.
+2. **Trước buổi học** (~45 phút): cài môi trường [docs/SETUP.md](docs/SETUP.md) → `python scripts/check_env.py` ra **SẴN SÀNG**. _Máy yếu? Dùng_ **[Google Colab](docs/COLAB.md)**.
 3. Cài **CVAT bằng Docker** rồi tạo Project từ `cvat/labels_generated.json`: [docs/CVAT_AI.md](docs/CVAT_AI.md) (có hình minh hoạ từng bước).
-4. Trên lớp làm theo **[GUIDE.md](GUIDE.md)** từ **Part 1** (gán tay 4 ảnh gold, *chưa* chạy model nào lên ảnh gold!).
+4. Trên lớp làm theo **[GUIDE.md](GUIDE.md)** từ **Part 1** (gán tay 4 ảnh gold, _chưa_ chạy model nào lên ảnh gold!).
 5. Chạy `python scripts/check_submission.py` trước khi nộp.
 
 > **Khi nộp:** đổi dòng tiêu đề này thành `# Day 08 Lab — <MSHV> - <Họ và tên>`. Xem [SUBMISSION.md](SUBMISSION.md).
@@ -87,9 +88,10 @@ flowchart LR
 <summary><b>Vì sao có "ảnh bẫy" và "gold gán tay"?</b></summary>
 
 Nhãn máy càng trông hợp lý, mắt bạn càng ít nhìn lại ảnh (**thiên kiến tự động hóa**). Bạn sẽ tự đo mình:
+
 - **Gold** (4 ảnh bạn gán tay từ đầu) cho biết máy đúng / sót bao nhiêu **thật sự**.
 - **12 ảnh bẫy** (lỗi đã biết, trộn kín trong pre-label) cho biết bạn **bắt được bao nhiêu** lỗi của máy.
-- *Accepted cao* mà *bắt bẫy thấp* nghĩa là bạn đang bấm Accept chứ chưa kiểm.
+- _Accepted cao_ mà _bắt bẫy thấp_ nghĩa là bạn đang bấm Accept chứ chưa kiểm.
 </details>
 
 <details>
@@ -103,36 +105,37 @@ Nhãn máy càng trông hợp lý, mắt bạn càng ít nhìn lại ảnh (**th
 <details>
 <summary><b>SAM là bắt buộc — chọn phiên bản nào?</b></summary>
 
-| Phiên bản | Chạy bằng | Hợp khi |
-|---|---|---|
-| SAM 1 (`mobile_sam.pt`, `sam_b.pt`) | `--sam mobile_sam.pt` | máy yếu |
-| **SAM 2.1** (`sam2.1_b.pt`) — khuyến nghị | `--sam sam2.1_b.pt` | cân bằng chất lượng / tốc độ |
-| SAM 3 (gated, gõ chữ ra mask) | `--model sam3` | có GPU + quyền truy cập |
+| Phiên bản                                 | Chạy bằng             | Hợp khi                      |
+| ----------------------------------------- | --------------------- | ---------------------------- |
+| SAM 1 (`mobile_sam.pt`, `sam_b.pt`)       | `--sam mobile_sam.pt` | máy yếu                      |
+| **SAM 2.1** (`sam2.1_b.pt`) — khuyến nghị | `--sam sam2.1_b.pt`   | cân bằng chất lượng / tốc độ |
+| SAM 3 (gated, gõ chữ ra mask)             | `--model sam3`        | có GPU + quyền truy cập      |
 
 Chi tiết và cách ghi vào `REPORT.md` mục 1: [docs/MODELS.md](docs/MODELS.md) mục B0.
+
 </details>
 
 ## Tài liệu
 
-| Bạn cần | Xem |
-|---|---|
-| Các Part và lệnh chạy | [GUIDE.md](GUIDE.md) |
-| Mốc tiến độ | [CHECKPOINTS.md](CHECKPOINTS.md) |
-| Quy tắc làm bài | [RULES.md](RULES.md) |
-| Chấm điểm (100 điểm) | [RUBRIC.md](RUBRIC.md) |
-| Sản phẩm phải nộp, tên repo | [SUBMISSION.md](SUBMISSION.md) |
-| Cài đặt môi trường, tải model | [docs/SETUP.md](docs/SETUP.md) |
-| Chạy trên Google Colab | [docs/COLAB.md](docs/COLAB.md) |
-| Tour 3 model: YOLO26, SAM, YOLOE | [docs/MODELS.md](docs/MODELS.md) |
-| Bài nâng cao (tuỳ chọn): Grounding DINO, OWLv2, SAM 3, `cvat-cli`, pilot, mask 8 ảnh | [docs/ADVANCED.md](docs/ADVANCED.md) |
-| CVAT: import, AI Tools, `cvat-cli` (có hình) | [docs/CVAT_AI.md](docs/CVAT_AI.md) |
-| Quy trình review, ảnh bẫy | [docs/REVIEW_CHECKLIST.md](docs/REVIEW_CHECKLIST.md) |
-| Chọn ngưỡng theo lớp (Part 3) | [docs/THRESHOLD.md](docs/THRESHOLD.md) |
-| Calibration & QC (Part 6) | [docs/CALIBRATION_QC.md](docs/CALIBRATION_QC.md) |
-| Label contract (guideline v1.0) + khung v1.1 | [guideline/](guideline/) |
-| Các script | [scripts/README.md](scripts/README.md) |
-| Nguồn & giấy phép ảnh | [data/README.md](data/README.md), [data/ATTRIBUTION.csv](data/ATTRIBUTION.csv) |
-| Thông tin & kết quả tóm tắt của bạn | [STUDENT.md](STUDENT.md) |
+| Bạn cần                                                                              | Xem                                                                            |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Các Part và lệnh chạy                                                                | [GUIDE.md](GUIDE.md)                                                           |
+| Mốc tiến độ                                                                          | [CHECKPOINTS.md](CHECKPOINTS.md)                                               |
+| Quy tắc làm bài                                                                      | [RULES.md](RULES.md)                                                           |
+| Chấm điểm (100 điểm)                                                                 | [RUBRIC.md](RUBRIC.md)                                                         |
+| Sản phẩm phải nộp, tên repo                                                          | [SUBMISSION.md](SUBMISSION.md)                                                 |
+| Cài đặt môi trường, tải model                                                        | [docs/SETUP.md](docs/SETUP.md)                                                 |
+| Chạy trên Google Colab                                                               | [docs/COLAB.md](docs/COLAB.md)                                                 |
+| Tour 3 model: YOLO26, SAM, YOLOE                                                     | [docs/MODELS.md](docs/MODELS.md)                                               |
+| Bài nâng cao (tuỳ chọn): Grounding DINO, OWLv2, SAM 3, `cvat-cli`, pilot, mask 8 ảnh | [docs/ADVANCED.md](docs/ADVANCED.md)                                           |
+| CVAT: import, AI Tools, `cvat-cli` (có hình)                                         | [docs/CVAT_AI.md](docs/CVAT_AI.md)                                             |
+| Quy trình review, ảnh bẫy                                                            | [docs/REVIEW_CHECKLIST.md](docs/REVIEW_CHECKLIST.md)                           |
+| Chọn ngưỡng theo lớp (Part 3)                                                        | [docs/THRESHOLD.md](docs/THRESHOLD.md)                                         |
+| Calibration & QC (Part 6)                                                            | [docs/CALIBRATION_QC.md](docs/CALIBRATION_QC.md)                               |
+| Label contract (guideline v1.0) + khung v1.1                                         | [guideline/](guideline/)                                                       |
+| Các script                                                                           | [scripts/README.md](scripts/README.md)                                         |
+| Nguồn & giấy phép ảnh                                                                | [data/README.md](data/README.md), [data/ATTRIBUTION.csv](data/ATTRIBUTION.csv) |
+| Thông tin & kết quả tóm tắt của bạn                                                  | [STUDENT.md](STUDENT.md)                                                       |
 
 ## Bạn học được gì
 
